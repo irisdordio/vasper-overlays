@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=1920, height=1080">
   <title>Vasper Scene</title>
-  <link rel="stylesheet" href="../shared/crt.css?v=4">
+  <link rel="stylesheet" href="../shared/crt.css?v=5">
   <style>
     /* --speed multiplies every looping motion; set it with ?speed=1.5 */
     :root { --speed: 1; }
-    body { background: var(--ink); }
+    html, body { background: var(--ink); }
 
     /* ==========================================================
        Shared layout
@@ -39,20 +39,26 @@
     @keyframes stripes-left  { from { transform: translate3d(0, 0, 0); }      to { transform: translate3d(-384px, 0, 0); } }
     @keyframes stripes-right { from { transform: translate3d(-384px, 0, 0); } to { transform: translate3d(0, 0, 0); } }
 
-    /* Dark band behind the content keeps contrast high */
-    .band {
+    /* Centred hero: the dark band sits behind the content and grows with it */
+    .hero {
       position: absolute;
       left: 0; right: 0;
-      top: 300px; height: 480px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .band {
+      position: absolute;
+      inset: 0;
       background: var(--ink-90);
       border-top: 8px solid var(--pink);
       border-bottom: 8px solid var(--blue);
     }
 
     .content {
-      position: absolute;
-      left: 160px; right: 160px;
-      top: 300px; height: 480px;
+      position: relative;
+      min-height: 480px;
+      padding: 72px 160px;
       display: grid;
       grid-template-columns: 1fr auto;
       align-items: center;
@@ -71,8 +77,8 @@
 
     .title {
       font-family: var(--font-display);
-      font-size: 88px;
-      line-height: 1.15;
+      font-size: 64px;               /* Press Start 2P is 1em wide per letter */
+      line-height: 1.3;
       color: var(--paper);
       text-transform: uppercase;
     }
@@ -111,7 +117,7 @@
 
     .press-start {
       position: absolute;
-      bottom: 150px; left: 0; right: 0;
+      bottom: 110px; left: 0; right: 0;
       text-align: center;
       font-family: var(--font-display);
       font-size: 28px;
@@ -255,10 +261,10 @@
 <body>
   <div class="stripes" aria-hidden="true"></div>
   <div id="sparks" aria-hidden="true"></div>
-  <div class="band"></div>
-
   <div class="handle pixel-box chroma" id="handle">its_Vasper</div>
 
+  <section class="hero">
+  <div class="band"></div>
   <main class="content">
     <div>
       <p class="eyebrow" id="eyebrow">&gt; NOW LOADING</p>
@@ -274,12 +280,15 @@
       </div>
     </div>
   </main>
+  </section>
 
   <p class="press-start blink" id="press-start">PRESS START</p>
   <div class="crt crt--vignette" aria-hidden="true"></div>
 
   <script type="module">
-    import { param } from "../shared/twitch-irc.js?v=4";
+    import { param } from "../shared/twitch-irc.js?v=5";
+    import { fitStage } from "../shared/stage.js?v=5";
+    fitStage();
 
     /* Copy for each scene */
     const COPY = {

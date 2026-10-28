@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=1920, height=1080">
   <title>Vasper Chat</title>
-  <link rel="stylesheet" href="../shared/crt.css?v=4">
+  <link rel="stylesheet" href="../shared/crt.css?v=5">
   <style>
     /* Chat column sits at the bottom left; the rest stays transparent */
     .chat {
@@ -69,7 +69,9 @@
   <section class="chat" id="chat" aria-live="polite"></section>
 
   <script type="module">
-    import { connectChat, param } from "../shared/twitch-irc.js?v=4";
+    import { connectChat, param } from "../shared/twitch-irc.js?v=5";
+    import { fitStage } from "../shared/stage.js?v=5";
+    fitStage();
 
     const channel = param("channel", "its_vasper");
     const maxMessages = Number(param("max", "6"));

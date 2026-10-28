@@ -104,6 +104,7 @@ vasper-overlays/
 │   └── alerts.html
 ├── shared/
 │   ├── crt.css           palette, pixel box, scanlines
+│   ├── stage.js          scales the 1920x1080 stage to any window
 │   └── twitch-irc.js     anonymous Twitch chat client
 └── docs/                 README images
 ```
