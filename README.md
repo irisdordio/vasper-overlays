@@ -28,6 +28,8 @@ Plain HTML, CSS and JavaScript. No build step, no framework, no account or token
 
 You can also download the repo and point the browser source to the local file with **Local file** ticked.
 
+After updating the overlays, right-click the source in OBS and choose **Refresh cache of current page**, or the old version may keep playing.
+
 ## Options
 
 Every option is a URL parameter, so one file covers many scenes.
@@ -38,6 +40,7 @@ Every option is a URL parameter, so one file covers many scenes.
 | --- | --- | --- |
 | `mode` | `starting` | `starting`, `brb`, `ending` |
 | `minutes` | `5` | Countdown length. `0` hides the timer |
+| `speed` | `1` | Background speed multiplier, from `0.25` to `4` |
 | `title`, `subtitle` | per mode | `?title=Super%20Metroid%20night` |
 | `handle` | `its_Vasper` | Name shown in the top corner |
 | `avatar` | none | Path or URL to a pixel avatar |

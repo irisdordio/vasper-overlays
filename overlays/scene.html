@@ -4,8 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=1920, height=1080">
   <title>Vasper Scene</title>
-  <link rel="stylesheet" href="../shared/crt.css">
+  <link rel="stylesheet" href="../shared/crt.css?v=3">
   <style>
+    /* --speed multiplies every looping motion; set it with ?speed=1.5 */
+    :root { --speed: 1; }
     body { background: var(--ink); }
 
     /* ---------- Striped backdrop, same language as the avatar ---------- */
@@ -19,7 +21,7 @@
         var(--plum) 96px 144px,
         #7a3aa8 144px 192px
       );
-      animation: stripes-move 3s linear infinite;
+      animation: stripes-move calc(1.4s / var(--speed)) linear infinite;
       will-change: transform;
     }
     /* 384px = one full pattern repeat along x at this angle, so the loop is seamless */
@@ -126,13 +128,13 @@
     }
 
     /* Entry: band wipes in, title types in */
-    .band { animation: wipe 0.5s var(--ease-out) both; transform-origin: left; }
+    .band { animation: wipe 0.35s var(--ease-out) both; transform-origin: left; }
     @keyframes wipe { from { transform: scaleX(0); } }
-    .eyebrow, .title, .subtitle, .side { animation: appear 0.6s var(--ease-out) both; }
-    .eyebrow  { animation-delay: 0.25s; }
-    .title    { animation-delay: 0.32s; }
-    .subtitle { animation-delay: 0.39s; }
-    .side     { animation-delay: 0.46s; }
+    .eyebrow, .title, .subtitle, .side { animation: appear 0.45s var(--ease-out) both; }
+    .eyebrow  { animation-delay: 0.15s; }
+    .title    { animation-delay: 0.2s; }
+    .subtitle { animation-delay: 0.25s; }
+    .side     { animation-delay: 0.3s; }
     @keyframes appear { from { opacity: 0; transform: translateY(24px); } }
   </style>
 </head>
@@ -162,7 +164,7 @@
   <div class="crt crt--vignette" aria-hidden="true"></div>
 
   <script type="module">
-    import { param } from "../shared/twitch-irc.js";
+    import { param } from "../shared/twitch-irc.js?v=3";
 
     /* Copy for each scene */
     const COPY = {
@@ -172,6 +174,8 @@
     };
 
     const mode = param("mode", "starting");
+    const speed = Math.min(4, Math.max(0.25, Number(param("speed", "1")) || 1));
+    document.documentElement.style.setProperty("--speed", speed);
     const copy = COPY[mode] || COPY.starting;
 
     const $ = (id) => document.getElementById(id);
@@ -220,8 +224,8 @@
       s.style.top = `${1080 + Math.random() * 400}px`;
       s.style.background = c;
       s.style.boxShadow = `8px 0 ${c}, -8px 0 ${c}, 0 8px ${c}, 0 -8px ${c}`;
-      s.style.animationDuration = `${6 + Math.random() * 6}s`;
-      s.style.animationDelay = `${-Math.random() * 12}s`;
+      s.style.animationDuration = `${(2.5 + Math.random() * 2.5) / speed}s`;
+      s.style.animationDelay = `${-Math.random() * 5}s`;
       $("sparks").appendChild(s);
     }
   </script>
