@@ -4,13 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=1920, height=1080">
   <title>Vasper Scene</title>
-  <link rel="stylesheet" href="../shared/crt.css?v=3">
+  <link rel="stylesheet" href="../shared/crt.css?v=4">
   <style>
     /* --speed multiplies every looping motion; set it with ?speed=1.5 */
     :root { --speed: 1; }
     body { background: var(--ink); }
 
-    /* ---------- Striped backdrop, same language as the avatar ---------- */
+    /* ==========================================================
+       Shared layout
+       ========================================================== */
+
+    /* Striped backdrop, same language as the avatar */
     .stripes {
       position: absolute;
       inset: -400px;
@@ -21,11 +25,19 @@
         var(--plum) 96px 144px,
         #7a3aa8 144px 192px
       );
-      animation: stripes-move calc(1.4s / var(--speed)) linear infinite;
       will-change: transform;
     }
-    /* 384px = one full pattern repeat along x at this angle, so the loop is seamless */
-    @keyframes stripes-move { to { transform: translate3d(-384px, 0, 0); } }
+    /* Dimming layer, used by the pause scene */
+    .stripes::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: var(--ink);
+      opacity: 0;
+    }
+    /* 384px = one full pattern repeat along x at this angle, so loops are seamless */
+    @keyframes stripes-left  { from { transform: translate3d(0, 0, 0); }      to { transform: translate3d(-384px, 0, 0); } }
+    @keyframes stripes-right { from { transform: translate3d(-384px, 0, 0); } to { transform: translate3d(0, 0, 0); } }
 
     /* Dark band behind the content keeps contrast high */
     .band {
@@ -48,6 +60,8 @@
     }
 
     .eyebrow {
+      display: flex;
+      align-items: center;
       font-family: var(--font-display);
       font-size: 24px;
       color: var(--cyan);
@@ -112,30 +126,130 @@
       padding: 20px 28px;
     }
 
-    /* Pixel sparkles drifting upward */
     .spark {
       position: absolute;
       width: 8px; height: 8px;
-      background: var(--paper);
-      box-shadow: 8px 0 var(--paper), -8px 0 var(--paper), 0 8px var(--paper), 0 -8px var(--paper);
-      opacity: 0.7;
-      animation: rise linear infinite;
-      will-change: transform;
-    }
-    @keyframes rise {
-      from { transform: translate3d(0, 0, 0); }
-      to   { transform: translate3d(0, -1300px, 0); }
+      opacity: 0.75;
+      will-change: transform, opacity;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
     }
 
-    /* Entry: band wipes in, title types in */
-    .band { animation: wipe 0.35s var(--ease-out) both; transform-origin: left; }
-    @keyframes wipe { from { transform: scaleX(0); } }
-    .eyebrow, .title, .subtitle, .side { animation: appear 0.45s var(--ease-out) both; }
-    .eyebrow  { animation-delay: 0.15s; }
-    .title    { animation-delay: 0.2s; }
-    .subtitle { animation-delay: 0.25s; }
-    .side     { animation-delay: 0.3s; }
-    @keyframes appear { from { opacity: 0; transform: translateY(24px); } }
+    /* Loading bar (starting scene only) */
+    .progress {
+      display: none;
+      position: relative;
+      width: 720px;
+      height: 28px;
+      margin-top: 40px;
+      overflow: hidden;
+    }
+    .progress__fill {
+      position: absolute;
+      inset: 0;
+      transform-origin: left;
+      transform: scaleX(0);
+      transition: transform 0.25s linear;
+      background: repeating-linear-gradient(-45deg, var(--pink) 0 14px, var(--pink-soft) 14px 28px);
+      background-size: 40px 28px;
+      animation: progress-flow calc(0.5s / var(--speed)) linear infinite;
+    }
+    @keyframes progress-flow { to { background-position: 40px 0; } }
+
+    /* Shared entry curve */
+    @keyframes appear { from { opacity: 0; transform: translate3d(0, 24px, 0); } }
+    @keyframes wipe   { from { transform: scaleX(0); } }
+
+    /* ==========================================================
+       STARTING: forward motion, anticipation
+       stripes rush left, sparkles rise, band wipes from the left,
+       a loading bar fills with the countdown
+       ========================================================== */
+    .mode-starting .stripes { animation: stripes-left calc(1.4s / var(--speed)) linear infinite; }
+    .mode-starting .band    { animation: wipe 0.35s var(--ease-out) both; transform-origin: left; }
+    .mode-starting .eyebrow,
+    .mode-starting .title,
+    .mode-starting .subtitle,
+    .mode-starting .progress,
+    .mode-starting .side    { animation: appear 0.45s var(--ease-out) both; }
+    .mode-starting .eyebrow  { animation-delay: 0.15s; }
+    .mode-starting .title    { animation-delay: 0.2s; }
+    .mode-starting .subtitle { animation-delay: 0.25s; }
+    .mode-starting .progress { animation-delay: 0.3s; }
+    .mode-starting .side     { animation-delay: 0.35s; }
+    .mode-starting.has-timer .progress { display: block; }
+    @keyframes spark-rise {
+      from { transform: translate3d(0, 0, 0); }
+      to   { transform: translate3d(0, -1500px, 0); }
+    }
+
+    /* ==========================================================
+       BRB: everything holds still, like a pause menu
+       stripes freeze and breathe, sparkles twinkle in place,
+       band opens from the centre, a pause icon pulses
+       ========================================================== */
+    .mode-brb .stripes::after { animation: breathe calc(1.6s / var(--speed)) ease-in-out infinite alternate; }
+    @keyframes breathe { from { opacity: 0.1; } to { opacity: 0.45; } }
+
+    .mode-brb .band { animation: wipe 0.4s var(--ease-out) both; transform-origin: center; }
+    .mode-brb .eyebrow,
+    .mode-brb .subtitle,
+    .mode-brb .side { animation: fade-in 0.4s ease-out both; }
+    .mode-brb .eyebrow  { animation-delay: 0.2s; }
+    .mode-brb .subtitle { animation-delay: 0.45s; }
+    .mode-brb .side     { animation-delay: 0.3s; }
+    @keyframes fade-in { from { opacity: 0; } }
+
+    /* Title zooms in from the centre, then pulses like a pause menu */
+    .mode-brb .title {
+      animation:
+        zoom-in 0.45s var(--ease-bounce) 0.25s both,
+        pause-pulse calc(1.2s / var(--speed)) ease-in-out 0.8s infinite alternate;
+    }
+    @keyframes zoom-in     { from { opacity: 0; transform: scale(0.6); } }
+    @keyframes pause-pulse { to { opacity: 0.55; } }
+
+    .mode-brb .eyebrow::before {
+      content: "";
+      width: 10px;
+      height: 28px;
+      margin-right: 36px;
+      background: var(--pink);
+      box-shadow: 18px 0 0 var(--pink);
+      animation: pause-pulse calc(0.6s / var(--speed)) ease-in-out infinite alternate;
+    }
+
+    @keyframes spark-twinkle {
+      0%, 100% { transform: scale(0); opacity: 0; }
+      50%      { transform: scale(1.4); opacity: 0.9; }
+    }
+
+    /* ==========================================================
+       ENDING: winding down, credits feel
+       stripes reverse, sparkles fall, band closes in from the right,
+       title letters drop in one by one
+       ========================================================== */
+    .mode-ending .stripes { animation: stripes-right calc(2.2s / var(--speed)) linear infinite; }
+    .mode-ending .band    { animation: wipe 0.45s var(--ease-out) both; transform-origin: right; }
+    .mode-ending .eyebrow,
+    .mode-ending .subtitle,
+    .mode-ending .side    { animation: slide-in 0.45s var(--ease-out) both; }
+    .mode-ending .eyebrow  { animation-delay: 0.15s; }
+    .mode-ending .subtitle { animation-delay: 0.9s; }
+    .mode-ending .side     { animation-delay: 1s; }
+    @keyframes slide-in { from { opacity: 0; transform: translate3d(48px, 0, 0); } }
+
+    .mode-ending .title .word { display: inline-block; white-space: nowrap; }
+    .mode-ending .title .letter {
+      display: inline-block;
+      animation: letter-drop 0.5s var(--ease-bounce) both;
+    }
+    @keyframes letter-drop { from { opacity: 0; transform: translate3d(0, -90px, 0); } }
+
+    @keyframes spark-fall {
+      from { transform: translate3d(0, 0, 0); }
+      to   { transform: translate3d(0, 1500px, 0); }
+    }
   </style>
 </head>
 <body>
@@ -150,6 +264,7 @@
       <p class="eyebrow" id="eyebrow">&gt; NOW LOADING</p>
       <h1 class="title chroma" id="title">Stream starting</h1>
       <p class="subtitle" id="subtitle">Grab a snack. Blow on the cartridge.</p>
+      <div class="progress pixel-box" aria-hidden="true"><div class="progress__fill" id="progress"></div></div>
     </div>
     <div class="side">
       <img class="avatar pixel-box--pink" id="avatar" alt="">
@@ -164,68 +279,105 @@
   <div class="crt crt--vignette" aria-hidden="true"></div>
 
   <script type="module">
-    import { param } from "../shared/twitch-irc.js?v=3";
+    import { param } from "../shared/twitch-irc.js?v=4";
 
     /* Copy for each scene */
     const COPY = {
       starting: { eyebrow: "> NOW LOADING", title: "Stream starting", subtitle: "Grab a snack. Blow on the cartridge.", timer: "STARTS IN", done: "PRESS START" },
-      brb:      { eyebrow: "> GAME PAUSED", title: "Be right back", subtitle: "Don't touch the controller.", timer: "BACK IN", done: "CONTINUE?" },
+      brb:      { eyebrow: "GAME PAUSED", title: "Be right back", subtitle: "Don't touch the controller.", timer: "BACK IN", done: "CONTINUE?" },
       ending:   { eyebrow: "> GAME OVER", title: "Thanks for playing", subtitle: "Same cartridge, next time.", timer: "", done: "SEE YOU NEXT STREAM" },
     };
 
-    const mode = param("mode", "starting");
+    const requested = param("mode", "starting");
+    const mode = COPY[requested] ? requested : "starting";
+    const copy = COPY[mode];
     const speed = Math.min(4, Math.max(0.25, Number(param("speed", "1")) || 1));
     document.documentElement.style.setProperty("--speed", speed);
-    const copy = COPY[mode] || COPY.starting;
+    document.body.classList.add(`mode-${mode}`);
 
     const $ = (id) => document.getElementById(id);
     $("eyebrow").textContent = copy.eyebrow;
-    $("title").textContent = param("title", copy.title);
     $("subtitle").textContent = param("subtitle", copy.subtitle);
     $("timer-label").textContent = copy.timer;
     $("handle").textContent = param("handle", "its_Vasper");
 
-    /* Optional avatar replaces the timer on the ending scene */
+    /* Title: the ending scene drops it in letter by letter */
+    const title = param("title", copy.title);
+    if (mode === "ending") {
+      $("title").textContent = "";
+      $("title").setAttribute("aria-label", title);
+      let i = 0;
+      title.split(" ").forEach((word, w) => {
+        if (w > 0) $("title").append(" ");
+        const wrap = document.createElement("span");
+        wrap.className = "word";
+        wrap.setAttribute("aria-hidden", "true");
+        [...word].forEach((ch) => {
+          const span = document.createElement("span");
+          span.className = "letter";
+          span.textContent = ch;
+          span.style.animationDelay = `${0.3 + i++ * 0.035}s`;
+          wrap.appendChild(span);
+        });
+        $("title").appendChild(wrap);
+        i++;
+      });
+    } else {
+      $("title").textContent = title;
+    }
+
+    /* Optional avatar */
     const avatar = param("avatar");
     if (avatar) {
       $("avatar").src = avatar;
       document.body.classList.add("has-avatar");
     }
 
-    /* ---------- Countdown ---------- */
+    /* ---------- Countdown (+ loading bar on the starting scene) ---------- */
     const minutes = Number(param("minutes", mode === "ending" ? "0" : "5"));
     if (!minutes || mode === "ending") {
       $("timer").style.display = "none";
       $("press-start").textContent = copy.done;
     } else {
-      const endAt = Date.now() + minutes * 60 * 1000;
+      document.body.classList.add("has-timer");
+      const total = minutes * 60 * 1000;
+      const endAt = Date.now() + total;
       const pad = (n) => String(n).padStart(2, "0");
       const tick = () => {
-        const left = Math.max(0, Math.round((endAt - Date.now()) / 1000));
+        const msLeft = Math.max(0, endAt - Date.now());
+        const left = Math.round(msLeft / 1000);
         $("timer-value").textContent = `${pad(Math.floor(left / 60))}:${pad(left % 60)}`;
+        $("progress").style.transform = `scaleX(${1 - msLeft / total})`;
         if (left === 0) {
-          $("timer-value").textContent = "00:00";
           $("press-start").textContent = copy.done;
           return;
         }
         setTimeout(tick, 250);
       };
-      $("press-start").textContent = "PRESS START";
+      $("press-start").textContent = mode === "brb" ? "PAUSED" : "PRESS START";
       tick();
     }
 
-    /* ---------- Sparkles ---------- */
+    /* ---------- Sparkles: rise, twinkle or fall depending on the scene ---------- */
+    const SPARKS = {
+      starting: { name: "spark-rise",    count: 18, top: () => 1080 + Math.random() * 400, dur: () => 2.5 + Math.random() * 2.5 },
+      brb:      { name: "spark-twinkle", count: 26, top: () => Math.random() * 1040,       dur: () => 1.2 + Math.random() * 1.4 },
+      ending:   { name: "spark-fall",    count: 18, top: () => -420 + Math.random() * 400, dur: () => 3.5 + Math.random() * 3 },
+    };
+    const sparkSet = SPARKS[mode];
     const colors = ["var(--paper)", "var(--pink-soft)", "var(--cyan)"];
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < sparkSet.count; i++) {
       const s = document.createElement("span");
       const c = colors[i % colors.length];
+      const dur = sparkSet.dur() / speed;
       s.className = "spark";
       s.style.left = `${Math.round(Math.random() * 1880 / 8) * 8}px`;
-      s.style.top = `${1080 + Math.random() * 400}px`;
+      s.style.top = `${sparkSet.top()}px`;
       s.style.background = c;
       s.style.boxShadow = `8px 0 ${c}, -8px 0 ${c}, 0 8px ${c}, 0 -8px ${c}`;
-      s.style.animationDuration = `${(2.5 + Math.random() * 2.5) / speed}s`;
-      s.style.animationDelay = `${-Math.random() * 5}s`;
+      s.style.animationName = sparkSet.name;
+      s.style.animationDuration = `${dur}s`;
+      s.style.animationDelay = `${-Math.random() * dur}s`;
       $("sparks").appendChild(s);
     }
   </script>

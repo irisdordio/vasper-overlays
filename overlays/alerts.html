@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=1920, height=1080">
   <title>Vasper Alerts</title>
-  <link rel="stylesheet" href="../shared/crt.css?v=3">
+  <link rel="stylesheet" href="../shared/crt.css?v=4">
   <style>
     .stage {
       position: absolute;
@@ -74,7 +74,7 @@
   <div class="stage" id="stage" aria-live="assertive"></div>
 
   <script type="module">
-    import { connectChat, param } from "../shared/twitch-irc.js?v=3";
+    import { connectChat, param } from "../shared/twitch-irc.js?v=4";
 
     const channel = param("channel", "its_vasper");
     const duration = Number(param("duration", "7")) * 1000;

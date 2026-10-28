@@ -12,7 +12,7 @@ Plain HTML, CSS and JavaScript. No build step, no framework, no account or token
 
 | Overlay | What it does |
 | --- | --- |
-| `overlays/scene.html` | Full-screen *starting soon*, *be right back* and *ending* scenes with a countdown |
+| `overlays/scene.html` | Full-screen *starting soon*, *be right back* and *ending* scenes, each with its own motion (see below) |
 | `overlays/chat.html` | Live Twitch chat as RPG dialogue boxes, with emotes and typewriter text |
 | `overlays/alerts.html` | Sub, resub, gift sub, raid and cheer alerts with pixel icons and an 8-bit jingle |
 
@@ -44,6 +44,14 @@ Every option is a URL parameter, so one file covers many scenes.
 | `title`, `subtitle` | per mode | `?title=Super%20Metroid%20night` |
 | `handle` | `its_Vasper` | Name shown in the top corner |
 | `avatar` | none | Path or URL to a pixel avatar |
+
+Each scene moves differently, so viewers can tell them apart at a glance:
+
+| Scene | Motion |
+| --- | --- |
+| `starting` | Stripes rush left, sparkles rise, a loading bar fills with the countdown |
+| `brb` | Stripes freeze and breathe, sparkles twinkle in place, the title pulses like a pause menu |
+| `ending` | Stripes drift back the other way, sparkles fall, the title drops in letter by letter |
 
 ### Chat
 
