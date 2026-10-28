@@ -53,7 +53,8 @@
       image-rendering: pixelated;
     }
 
-    /* Blinking "next" arrow, like a text box waiting for A */
+    /* "Next" arrow: hidden while the text types, then appears and stays,
+       like an RPG text box waiting for you to press A */
     .msg__next {
       position: absolute;
       right: 14px;
@@ -62,7 +63,9 @@
       border-left: 8px solid transparent;
       border-right: 8px solid transparent;
       border-top: 10px solid var(--pink);
+      visibility: hidden;
     }
+    .msg.is-done .msg__next { visibility: visible; }
   </style>
 </head>
 <body>
@@ -165,11 +168,11 @@
       body.className = "msg__text";
 
       const next = document.createElement("span");
-      next.className = "msg__next blink";
+      next.className = "msg__next";
 
       box.append(name, body, next);
       chat.appendChild(box);
-      typeInto(body, buildText(body, text, emotes));
+      typeInto(body, buildText(body, text, emotes)).then(() => box.classList.add("is-done"));
 
       while (chat.children.length > maxMessages) removeMessage(chat.firstElementChild);
       if (fadeAfter > 0) setTimeout(() => removeMessage(box), fadeAfter * 1000);
