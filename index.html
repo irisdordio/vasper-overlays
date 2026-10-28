@@ -51,12 +51,16 @@
       background:
         conic-gradient(#2a2238 25%, #1d1729 0 50%, #2a2238 0 75%, #1d1729 0) 0 0 / 32px 32px;
     }
+    /* The iframe matches its frame exactly; each overlay scales itself
+       inside (shared/stage.js), so nothing here is transformed and the
+       preview can never catch scrolls or clicks meant for the page */
     .screen iframe {
       position: absolute;
-      top: 0; left: 0;
-      width: 1920px; height: 1080px;
+      inset: 0;
+      width: 100%;
+      height: 100%;
       border: 0;
-      transform-origin: 0 0;
+      pointer-events: none;
     }
 
     .links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
@@ -85,26 +89,26 @@
       <section class="card">
         <h2>Scenes</h2>
         <p>Starting soon, be right back and ending screens with a countdown.</p>
-        <div class="screen"><iframe src="overlays/scene.html?v=6&mode=starting&minutes=5" title="Starting soon scene preview" loading="lazy"></iframe></div>
+        <div class="screen"><iframe src="overlays/scene.html?v=7&mode=starting&minutes=5" title="Starting soon scene preview" loading="lazy"></iframe></div>
         <div class="links">
-          <a href="overlays/scene.html?v=6&mode=starting&minutes=5">Starting</a>
-          <a href="overlays/scene.html?v=6&mode=brb&minutes=3">BRB</a>
-          <a href="overlays/scene.html?v=6&mode=ending">Ending</a>
+          <a href="overlays/scene.html?v=7&mode=starting&minutes=5">Starting</a>
+          <a href="overlays/scene.html?v=7&mode=brb&minutes=3">BRB</a>
+          <a href="overlays/scene.html?v=7&mode=ending">Ending</a>
         </div>
       </section>
 
       <section class="card">
         <h2>Chat</h2>
         <p>Live Twitch chat as RPG dialogue boxes, with emotes, typewriter text and moderation sync.</p>
-        <div class="screen"><iframe src="overlays/chat.html?v=6&demo=1" title="Chat overlay preview" loading="lazy"></iframe></div>
-        <div class="links"><a href="overlays/chat.html?v=6&demo=1">Open demo</a></div>
+        <div class="screen"><iframe src="overlays/chat.html?v=7&demo=1" title="Chat overlay preview" loading="lazy"></iframe></div>
+        <div class="links"><a href="overlays/chat.html?v=7&demo=1">Open demo</a></div>
       </section>
 
       <section class="card">
         <h2>Alerts</h2>
         <p>Subs, resubs, gift subs, raids and cheers with pixel icons and an 8-bit jingle made in Web Audio.</p>
-        <div class="screen"><iframe src="overlays/alerts.html?v=6&test=1&sound=0" title="Alerts overlay preview" loading="lazy"></iframe></div>
-        <div class="links"><a href="overlays/alerts.html?v=6&test=1">Open test (with sound)</a></div>
+        <div class="screen"><iframe src="overlays/alerts.html?v=7&test=1&sound=0" title="Alerts overlay preview" loading="lazy"></iframe></div>
+        <div class="links"><a href="overlays/alerts.html?v=7&test=1">Open test (with sound)</a></div>
       </section>
     </main>
 
@@ -113,14 +117,5 @@
     </footer>
   </div>
 
-  <script>
-    /* Scale each 1920x1080 iframe to the width of its frame */
-    const fit = () => document.querySelectorAll(".screen").forEach((screen) => {
-      const frame = screen.querySelector("iframe");
-      frame.style.transform = `scale(${screen.clientWidth / 1920})`;
-    });
-    addEventListener("resize", fit);
-    fit();
-  </script>
 </body>
 </html>

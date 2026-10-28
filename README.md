@@ -28,6 +28,8 @@ Plain HTML, CSS and JavaScript. No build step, no framework, no account or token
 
 You can also download the repo and point the browser source to the local file with **Local file** ticked.
 
+Opened in a normal browser, each overlay scales to fit the window and shows a **← Home** button back to the demo page. Neither happens inside OBS, so the button never shows on stream.
+
 After updating the overlays, right-click the source in OBS and choose **Refresh cache of current page**, or the old version may keep playing.
 
 ## Options
@@ -104,7 +106,7 @@ vasper-overlays/
 │   └── alerts.html
 ├── shared/
 │   ├── crt.css           palette, pixel box, scanlines
-│   ├── stage.js          scales the 1920x1080 stage to any window
+│   ├── stage.js          fits the 1920x1080 stage, adds the Home button
 │   └── twitch-irc.js     anonymous Twitch chat client
 └── docs/                 README images
 ```

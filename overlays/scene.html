@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=1920, height=1080">
   <title>Vasper Scene</title>
-  <link rel="stylesheet" href="../shared/crt.css?v=5">
+  <link rel="stylesheet" href="../shared/crt.css?v=7">
   <style>
     /* --speed multiplies every looping motion; set it with ?speed=1.5 */
     :root { --speed: 1; }
@@ -286,9 +286,9 @@
   <div class="crt crt--vignette" aria-hidden="true"></div>
 
   <script type="module">
-    import { param } from "../shared/twitch-irc.js?v=5";
-    import { fitStage } from "../shared/stage.js?v=5";
-    fitStage();
+    import { param } from "../shared/twitch-irc.js?v=7";
+    import { setupStage } from "../shared/stage.js?v=7";
+    setupStage();
 
     /* Copy for each scene */
     const COPY = {
