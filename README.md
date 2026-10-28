@@ -51,7 +51,7 @@ Every option is a URL parameter, so one file covers many scenes.
 | `fade` | `45` | Seconds before a message leaves. `0` keeps it |
 | `colors` | `palette` | `twitch` uses each viewer's own colour |
 | `hide` | common bots | Comma-separated names to ignore |
-| `typespeed` | `18` | Milliseconds per letter. `0` is instant |
+| `typespeed` | `10` | Milliseconds per letter. `0` is instant |
 | `side` | left | `right` moves the column |
 | `demo` | off | `1` shows fake messages |
 
@@ -77,7 +77,7 @@ The chat and alerts connect to Twitch chat anonymously over WebSocket (`shared/t
 Design notes:
 
 - One `--px` unit (4px) drives borders, shadows and spacing, so everything snaps to the same pixel grid.
-- Motion uses `steps()` timing instead of smooth easing, which gives the choppy 16-bit feel.
+- Motion uses shared easing curves (`--ease-out`, `--ease-in`, `--ease-bounce`) and GPU-friendly `translate3d`, so it stays smooth at stream frame rates. The striped background loops over one exact pattern repeat, so there is no visible jump.
 - Pixel icons are drawn from text maps onto a tiny canvas, and the jingle is generated with a square-wave oscillator. No image or audio files.
 - Viewer text is always inserted with `textContent`, never as HTML.
 - `prefers-reduced-motion` turns animations off.

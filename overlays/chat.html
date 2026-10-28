@@ -22,12 +22,12 @@
     .msg {
       padding: 28px 24px 18px;
       margin-top: 12px;
-      animation: pop-in 0.3s steps(3) both;
+      animation: pop-in 0.35s var(--ease-out) both;
     }
-    .msg.is-leaving { animation: pop-out 0.3s steps(3) both; }
+    .msg.is-leaving { animation: pop-out 0.25s var(--ease-in) both; }
 
-    @keyframes pop-in  { from { opacity: 0; transform: translateX(-24px); } }
-    @keyframes pop-out { to   { opacity: 0; transform: translateX(-24px); } }
+    @keyframes pop-in  { from { opacity: 0; transform: translate3d(-40px, 0, 0); } }
+    @keyframes pop-out { to   { opacity: 0; transform: translate3d(-40px, 0, 0); } }
 
     .msg__name {
       position: absolute;
@@ -77,7 +77,7 @@
     const useTwitchColors = param("colors", "palette") === "twitch";
     const hidden = param("hide", "nightbot,streamelements,streamlabs,moobot")
       .toLowerCase().split(",").map((s) => s.trim());
-    const typeSpeed = Number(param("typespeed", "18"));   // ms per letter, 0 = instant
+    const typeSpeed = Number(param("typespeed", "10"));   // ms per letter, 0 = instant
 
     if (param("side") === "right") document.body.classList.add("side-right");
 

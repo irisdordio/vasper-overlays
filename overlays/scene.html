@@ -11,7 +11,7 @@
     /* ---------- Striped backdrop, same language as the avatar ---------- */
     .stripes {
       position: absolute;
-      inset: -200px;
+      inset: -400px;
       background: repeating-linear-gradient(
         -30deg,
         var(--plum) 0 48px,
@@ -19,10 +19,11 @@
         var(--plum) 96px 144px,
         #7a3aa8 144px 192px
       );
-      animation: stripes-move 4s linear infinite;
-      animation-timing-function: steps(24);
+      animation: stripes-move 3s linear infinite;
+      will-change: transform;
     }
-    @keyframes stripes-move { to { transform: translate(-192px, 0); } }
+    /* 384px = one full pattern repeat along x at this angle, so the loop is seamless */
+    @keyframes stripes-move { to { transform: translate3d(-384px, 0, 0); } }
 
     /* Dark band behind the content keeps contrast high */
     .band {
@@ -117,18 +118,22 @@
       box-shadow: 8px 0 var(--paper), -8px 0 var(--paper), 0 8px var(--paper), 0 -8px var(--paper);
       opacity: 0.7;
       animation: rise linear infinite;
-      animation-timing-function: steps(40);
+      will-change: transform;
     }
     @keyframes rise {
-      from { transform: translateY(0); }
-      to   { transform: translateY(-1300px); }
+      from { transform: translate3d(0, 0, 0); }
+      to   { transform: translate3d(0, -1300px, 0); }
     }
 
     /* Entry: band wipes in, title types in */
-    .band { animation: wipe 0.6s steps(6) both; transform-origin: left; }
+    .band { animation: wipe 0.5s var(--ease-out) both; transform-origin: left; }
     @keyframes wipe { from { transform: scaleX(0); } }
-    .title { animation: appear 0.8s 0.5s steps(4) both; }
-    @keyframes appear { from { opacity: 0; transform: translateY(16px); } }
+    .eyebrow, .title, .subtitle, .side { animation: appear 0.6s var(--ease-out) both; }
+    .eyebrow  { animation-delay: 0.25s; }
+    .title    { animation-delay: 0.32s; }
+    .subtitle { animation-delay: 0.39s; }
+    .side     { animation-delay: 0.46s; }
+    @keyframes appear { from { opacity: 0; transform: translateY(24px); } }
   </style>
 </head>
 <body>
@@ -215,8 +220,8 @@
       s.style.top = `${1080 + Math.random() * 400}px`;
       s.style.background = c;
       s.style.boxShadow = `8px 0 ${c}, -8px 0 ${c}, 0 8px ${c}, 0 -8px ${c}`;
-      s.style.animationDuration = `${14 + Math.random() * 16}s`;
-      s.style.animationDelay = `${-Math.random() * 30}s`;
+      s.style.animationDuration = `${6 + Math.random() * 6}s`;
+      s.style.animationDelay = `${-Math.random() * 12}s`;
       $("sparks").appendChild(s);
     }
   </script>

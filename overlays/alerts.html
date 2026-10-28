@@ -21,20 +21,20 @@
       min-width: 760px;
       max-width: 1100px;
       padding: 36px 48px 36px 36px;
-      animation: drop-in 0.5s steps(5) both;
+      animation: drop-in 0.45s var(--ease-bounce) both;
     }
-    .alert.is-leaving { animation: drop-out 0.4s steps(4) both; }
+    .alert.is-leaving { animation: drop-out 0.3s var(--ease-in) both; }
 
-    @keyframes drop-in  { from { transform: translateY(-260px); } 70% { transform: translateY(16px); } }
-    @keyframes drop-out { to   { transform: translateY(-260px); opacity: 0; } }
+    @keyframes drop-in  { from { transform: translate3d(0, -320px, 0); } }
+    @keyframes drop-out { to   { transform: translate3d(0, -320px, 0); opacity: 0; } }
 
     .alert__icon {
       width: 120px;
       height: 120px;
       image-rendering: pixelated;
-      animation: bob 0.8s steps(2) infinite;
+      animation: bob 0.6s ease-in-out infinite alternate;
     }
-    @keyframes bob { 50% { transform: translateY(-8px); } }
+    @keyframes bob { to { transform: translate3d(0, -10px, 0); } }
 
     .alert__kicker {
       font-family: var(--font-display);
@@ -65,7 +65,7 @@
       opacity: 0;
       pointer-events: none;
     }
-    .flash.is-on { animation: flash 0.3s steps(3); }
+    .flash.is-on { animation: flash 0.35s ease-out; }
     @keyframes flash { 0% { opacity: 0.35; } 100% { opacity: 0; } }
   </style>
 </head>
