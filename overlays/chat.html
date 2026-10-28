@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <title>Vasper Chat</title>
+  <link rel="stylesheet" href="../shared/crt.css">
+  <style>
+    /* Chat column sits at the bottom left; the rest stays transparent */
+    .chat {
+      position: absolute;
+      left: 48px;
+      bottom: 48px;
+      width: 560px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+    .side-right .chat { left: auto; right: 48px; }
+
+    /* RPG dialogue box: name tag sits on the top edge */
+    .msg {
+      padding: 28px 24px 18px;
+      margin-top: 12px;
+      animation: pop-in 0.3s steps(3) both;
+    }
+    .msg.is-leaving { animation: pop-out 0.3s steps(3) both; }
+
+    @keyframes pop-in  { from { opacity: 0; transform: translateX(-24px); } }
+    @keyframes pop-out { to   { opacity: 0; transform: translateX(-24px); } }
+
+    .msg__name {
+      position: absolute;
+      top: -18px;
+      left: 16px;
+      padding: 8px 12px;
+      background: var(--ink);
+      font-family: var(--font-display);
+      font-size: 14px;
+      box-shadow: 0 0 0 4px currentColor;
+    }
+
+    .msg__text {
+      font-size: 34px;
+      line-height: 1.05;
+      color: var(--paper);
+      overflow-wrap: anywhere;
+    }
+
+    .msg__text img.emote {
+      height: 34px;
+      vertical-align: -6px;
+      image-rendering: pixelated;
+    }
+
+    /* Blinking "next" arrow, like a text box waiting for A */
+    .msg__next {
+      position: absolute;
+      right: 14px;
+      bottom: 8px;
+      width: 0; height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 10px solid var(--pink);
+    }
+  </style>
+</head>
+<body>
+  <section class="chat" id="chat" aria-live="polite"></section>
+
+  <script type="module">
+    import { connectChat, param } from "../shared/twitch-irc.js";
+
+    const channel = param("channel", "its_vasper");
+    const maxMessages = Number(param("max", "6"));
+    const fadeAfter = Number(param("fade", "45"));        // seconds, 0 = never
+    const useTwitchColors = param("colors", "palette") === "twitch";
+    const hidden = param("hide", "nightbot,streamelements,streamlabs,moobot")
+      .toLowerCase().split(",").map((s) => s.trim());
+    const typeSpeed = Number(param("typespeed", "18"));   // ms per letter, 0 = instant
+
+    if (param("side") === "right") document.body.classList.add("side-right");
+
+    const chat = document.getElementById("chat");
+    const palette = ["#ff6fb5", "#4f9dff", "#9be7ff", "#ffc2e2", "#c99bff", "#ffd36f"];
+
+    /* Same user always gets the same palette colour */
+    function colorFor(user, twitchColor) {
+      if (useTwitchColors && twitchColor) return twitchColor;
+      let hash = 0;
+      for (const ch of user.toLowerCase()) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+      return palette[hash % palette.length];
+    }
+
+    /* Builds text + emotes without ever injecting raw HTML */
+    function buildText(container, text, emoteTag) {
+      const emotes = [];
+      if (emoteTag) {
+        emoteTag.split("/").forEach((entry) => {
+          const [id, ranges] = entry.split(":");
+          ranges.split(",").forEach((r) => {
+            const [start, end] = r.split("-").map(Number);
+            emotes.push({ id, start, end });
+          });
+        });
+        emotes.sort((a, b) => a.start - b.start);
+      }
+
+      // Twitch emote ranges count code points, not UTF-16 units
+      const chars = [...text];
+      let cursor = 0;
+      const pieces = [];
+      emotes.forEach(({ id, start, end }) => {
+        if (start > cursor) pieces.push({ text: chars.slice(cursor, start).join("") });
+        pieces.push({ emote: id, alt: chars.slice(start, end + 1).join("") });
+        cursor = end + 1;
+      });
+      if (cursor < chars.length) pieces.push({ text: chars.slice(cursor).join("") });
+      return pieces;
+    }
+
+    async function typeInto(el, pieces) {
+      for (const piece of pieces) {
+        if (piece.emote) {
+          const img = document.createElement("img");
+          img.className = "emote";
+          img.alt = piece.alt;
+          img.src = `https://static-cdn.jtvnw.net/emoticons/v2/${piece.emote}/default/dark/2.0`;
+          el.appendChild(img);
+          continue;
+        }
+        if (!typeSpeed) { el.append(piece.text); continue; }
+        const node = document.createTextNode("");
+        el.appendChild(node);
+        for (const ch of piece.text) {
+          node.data += ch;
+          await new Promise((r) => setTimeout(r, typeSpeed));
+        }
+      }
+    }
+
+    function removeMessage(el) {
+      if (!el.isConnected || el.classList.contains("is-leaving")) return;
+      el.classList.add("is-leaving");
+      setTimeout(() => el.remove(), 320);
+    }
+
+    function addMessage({ id, user, color, text, emotes }) {
+      if (hidden.includes(user.toLowerCase())) return;
+      if (text.startsWith("!")) return;  // skip bot commands
+
+      const box = document.createElement("article");
+      box.className = "msg pixel-box";
+      box.dataset.id = id || "";
+      box.dataset.user = user.toLowerCase();
+
+      const name = document.createElement("span");
+      name.className = "msg__name";
+      name.style.color = colorFor(user, color);
+      name.textContent = user;
+
+      const body = document.createElement("p");
+      body.className = "msg__text";
+
+      const next = document.createElement("span");
+      next.className = "msg__next blink";
+
+      box.append(name, body, next);
+      chat.appendChild(box);
+      typeInto(body, buildText(body, text, emotes));
+
+      while (chat.children.length > maxMessages) removeMessage(chat.firstElementChild);
+      if (fadeAfter > 0) setTimeout(() => removeMessage(box), fadeAfter * 1000);
+    }
+
+    /* ---------- Demo mode: ?demo=1 ---------- */
+    if (param("demo") === "1") {
+      const lines = [
+        ["pixelpirate", "good evening! what are we playing today?"],
+        ["koopa_kid", "that CRT filter is so good"],
+        ["mana_potion", "Chrono Trigger soundtrack hits different"],
+        ["its_Vasper", "Super Metroid tonight! No map, just vibes"],
+        ["bluebomber", "LETS GO"],
+        ["save_state", "already scared for Ridley tbh"],
+      ];
+      let i = 0;
+      const next = () => {
+        const [user, text] = lines[i % lines.length];
+        addMessage({ id: `demo-${i}`, user, text });
+        i++;
+        setTimeout(next, 2200);
+      };
+      next();
+    } else {
+      connectChat(channel, {
+        onMessage: addMessage,
+        onEvent: (e) => {
+          if (e.type !== "moderation") return;
+          // Remove deleted messages / timed out users from the overlay
+          const selector = e.command === "CLEARMSG"
+            ? `[data-id="${CSS.escape(e.id || "")}"]`
+            : e.target ? `[data-user="${CSS.escape(e.target.toLowerCase())}"]` : ".msg";
+          chat.querySelectorAll(selector).forEach(removeMessage);
+        },
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <title>Vasper Scene</title>
+  <link rel="stylesheet" href="../shared/crt.css">
+  <style>
+    body { background: var(--ink); }
+
+    /* ---------- Striped backdrop, same language as the avatar ---------- */
+    .stripes {
+      position: absolute;
+      inset: -200px;
+      background: repeating-linear-gradient(
+        -30deg,
+        var(--plum) 0 48px,
+        var(--violet) 48px 96px,
+        var(--plum) 96px 144px,
+        #7a3aa8 144px 192px
+      );
+      animation: stripes-move 4s linear infinite;
+      animation-timing-function: steps(24);
+    }
+    @keyframes stripes-move { to { transform: translate(-192px, 0); } }
+
+    /* Dark band behind the content keeps contrast high */
+    .band {
+      position: absolute;
+      left: 0; right: 0;
+      top: 300px; height: 480px;
+      background: var(--ink-90);
+      border-top: 8px solid var(--pink);
+      border-bottom: 8px solid var(--blue);
+    }
+
+    .content {
+      position: absolute;
+      left: 160px; right: 160px;
+      top: 300px; height: 480px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 80px;
+    }
+
+    .eyebrow {
+      font-family: var(--font-display);
+      font-size: 24px;
+      color: var(--cyan);
+      letter-spacing: 4px;
+      margin-bottom: 40px;
+    }
+
+    .title {
+      font-family: var(--font-display);
+      font-size: 88px;
+      line-height: 1.15;
+      color: var(--paper);
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      margin-top: 36px;
+      font-size: 44px;
+      color: var(--pink-soft);
+    }
+
+    .timer {
+      padding: 48px 56px;
+      text-align: center;
+      min-width: 420px;
+    }
+    .timer__label {
+      font-family: var(--font-display);
+      font-size: 20px;
+      color: var(--pink);
+      margin-bottom: 24px;
+    }
+    .timer__value {
+      font-family: var(--font-display);
+      font-size: 72px;
+      color: var(--paper);
+    }
+
+    .avatar {
+      width: 360px;
+      height: 360px;
+      object-fit: cover;
+      image-rendering: pixelated;
+      display: none;
+    }
+    .has-avatar .avatar { display: block; }
+
+    .press-start {
+      position: absolute;
+      bottom: 150px; left: 0; right: 0;
+      text-align: center;
+      font-family: var(--font-display);
+      font-size: 28px;
+      color: var(--paper);
+    }
+
+    .handle {
+      position: absolute;
+      top: 64px; left: 80px;
+      font-family: var(--font-display);
+      font-size: 22px;
+      padding: 20px 28px;
+    }
+
+    /* Pixel sparkles drifting upward */
+    .spark {
+      position: absolute;
+      width: 8px; height: 8px;
+      background: var(--paper);
+      box-shadow: 8px 0 var(--paper), -8px 0 var(--paper), 0 8px var(--paper), 0 -8px var(--paper);
+      opacity: 0.7;
+      animation: rise linear infinite;
+      animation-timing-function: steps(40);
+    }
+    @keyframes rise {
+      from { transform: translateY(0); }
+      to   { transform: translateY(-1300px); }
+    }
+
+    /* Entry: band wipes in, title types in */
+    .band { animation: wipe 0.6s steps(6) both; transform-origin: left; }
+    @keyframes wipe { from { transform: scaleX(0); } }
+    .title { animation: appear 0.8s 0.5s steps(4) both; }
+    @keyframes appear { from { opacity: 0; transform: translateY(16px); } }
+  </style>
+</head>
+<body>
+  <div class="stripes" aria-hidden="true"></div>
+  <div id="sparks" aria-hidden="true"></div>
+  <div class="band"></div>
+
+  <div class="handle pixel-box chroma" id="handle">its_Vasper</div>
+
+  <main class="content">
+    <div>
+      <p class="eyebrow" id="eyebrow">&gt; NOW LOADING</p>
+      <h1 class="title chroma" id="title">Stream starting</h1>
+      <p class="subtitle" id="subtitle">Grab a snack. Blow on the cartridge.</p>
+    </div>
+    <div class="side">
+      <img class="avatar pixel-box--pink" id="avatar" alt="">
+      <div class="timer pixel-box pixel-box--pink" id="timer">
+        <p class="timer__label" id="timer-label">STARTS IN</p>
+        <p class="timer__value" id="timer-value">05:00</p>
+      </div>
+    </div>
+  </main>
+
+  <p class="press-start blink" id="press-start">PRESS START</p>
+  <div class="crt crt--vignette" aria-hidden="true"></div>
+
+  <script type="module">
+    import { param } from "../shared/twitch-irc.js";
+
+    /* Copy for each scene */
+    const COPY = {
+      starting: { eyebrow: "> NOW LOADING", title: "Stream starting", subtitle: "Grab a snack. Blow on the cartridge.", timer: "STARTS IN", done: "PRESS START" },
+      brb:      { eyebrow: "> GAME PAUSED", title: "Be right back", subtitle: "Don't touch the controller.", timer: "BACK IN", done: "CONTINUE?" },
+      ending:   { eyebrow: "> GAME OVER", title: "Thanks for playing", subtitle: "Same cartridge, next time.", timer: "", done: "SEE YOU NEXT STREAM" },
+    };
+
+    const mode = param("mode", "starting");
+    const copy = COPY[mode] || COPY.starting;
+
+    const $ = (id) => document.getElementById(id);
+    $("eyebrow").textContent = copy.eyebrow;
+    $("title").textContent = param("title", copy.title);
+    $("subtitle").textContent = param("subtitle", copy.subtitle);
+    $("timer-label").textContent = copy.timer;
+    $("handle").textContent = param("handle", "its_Vasper");
+
+    /* Optional avatar replaces the timer on the ending scene */
+    const avatar = param("avatar");
+    if (avatar) {
+      $("avatar").src = avatar;
+      document.body.classList.add("has-avatar");
+    }
+
+    /* ---------- Countdown ---------- */
+    const minutes = Number(param("minutes", mode === "ending" ? "0" : "5"));
+    if (!minutes || mode === "ending") {
+      $("timer").style.display = "none";
+      $("press-start").textContent = copy.done;
+    } else {
+      const endAt = Date.now() + minutes * 60 * 1000;
+      const pad = (n) => String(n).padStart(2, "0");
+      const tick = () => {
+        const left = Math.max(0, Math.round((endAt - Date.now()) / 1000));
+        $("timer-value").textContent = `${pad(Math.floor(left / 60))}:${pad(left % 60)}`;
+        if (left === 0) {
+          $("timer-value").textContent = "00:00";
+          $("press-start").textContent = copy.done;
+          return;
+        }
+        setTimeout(tick, 250);
+      };
+      $("press-start").textContent = "PRESS START";
+      tick();
+    }
+
+    /* ---------- Sparkles ---------- */
+    const colors = ["var(--paper)", "var(--pink-soft)", "var(--cyan)"];
+    for (let i = 0; i < 18; i++) {
+      const s = document.createElement("span");
+      const c = colors[i % colors.length];
+      s.className = "spark";
+      s.style.left = `${Math.round(Math.random() * 1880 / 8) * 8}px`;
+      s.style.top = `${1080 + Math.random() * 400}px`;
+      s.style.background = c;
+      s.style.boxShadow = `8px 0 ${c}, -8px 0 ${c}, 0 8px ${c}, 0 -8px ${c}`;
+      s.style.animationDuration = `${14 + Math.random() * 16}s`;
+      s.style.animationDelay = `${-Math.random() * 30}s`;
+      $("sparks").appendChild(s);
+    }
+  </script>
+</body>
+</html>
