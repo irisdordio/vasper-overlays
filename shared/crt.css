@@ -3,7 +3,18 @@
    Everything is sized for a 1920x1080 OBS browser source.
    ========================================================== */
 
-@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap");
+/* Fonts live in the repo (Latin subset, SIL OFL), so there is no
+   request chain to Google Fonts and overlays load fast in OBS */
+@font-face {
+  font-family: "Press Start 2P";
+  src: url("fonts/PressStart2P-Regular.woff") format("woff");
+  font-display: swap;
+}
+@font-face {
+  font-family: "VT323";
+  src: url("fonts/VT323-Regular.woff") format("woff");
+  font-display: swap;
+}
 
 :root {
   /* Palette pulled from the channel avatar: blue figure on pink/purple stripes */

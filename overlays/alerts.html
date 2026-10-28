@@ -4,13 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=1920, height=1080">
   <title>Vasper Alerts</title>
-  <link rel="stylesheet" href="../shared/crt.css?v=7">
+  <link rel="stylesheet" href="../shared/crt.css?v=8">
+  <link rel="preload" href="../shared/fonts/PressStart2P-Regular.woff" as="font" type="font/woff" crossorigin>
+  <link rel="preload" href="../shared/fonts/VT323-Regular.woff" as="font" type="font/woff" crossorigin>
   <style>
+    /* Full-width row that centres the alert, so the box can use up to its
+       max-width instead of being squeezed to half the screen */
     .stage {
       position: absolute;
       top: 80px;
-      left: 50%;
-      transform: translateX(-50%);
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
     }
 
     .alert {
@@ -45,7 +51,7 @@
 
     .alert__headline {
       font-family: var(--font-display);
-      font-size: 40px;
+      font-size: 32px;
       line-height: 1.3;
       color: var(--paper);
     }
@@ -74,9 +80,9 @@
   <div class="stage" id="stage" aria-live="assertive"></div>
 
   <script type="module">
-    import { connectChat, param } from "../shared/twitch-irc.js?v=7";
-    import { setupStage } from "../shared/stage.js?v=7";
-    setupStage();
+    import { connectChat, param } from "../shared/twitch-irc.js?v=8";
+    import * as stageSetup from "../shared/stage.js?v=8";
+    try { (stageSetup.setupStage || stageSetup.fitStage)?.(); } catch (e) { console.warn("stage setup skipped", e); }
 
     const channel = param("channel", "its_vasper");
     const duration = Number(param("duration", "7")) * 1000;

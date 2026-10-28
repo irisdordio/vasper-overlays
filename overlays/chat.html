@@ -4,7 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=1920, height=1080">
   <title>Vasper Chat</title>
-  <link rel="stylesheet" href="../shared/crt.css?v=7">
+  <link rel="stylesheet" href="../shared/crt.css?v=8">
+  <link rel="preload" href="../shared/fonts/PressStart2P-Regular.woff" as="font" type="font/woff" crossorigin>
+  <link rel="preload" href="../shared/fonts/VT323-Regular.woff" as="font" type="font/woff" crossorigin>
   <style>
     /* Chat column sits at the bottom left; the rest stays transparent */
     .chat {
@@ -72,9 +74,9 @@
   <section class="chat" id="chat" aria-live="polite"></section>
 
   <script type="module">
-    import { connectChat, param } from "../shared/twitch-irc.js?v=7";
-    import { setupStage } from "../shared/stage.js?v=7";
-    setupStage();
+    import { connectChat, param } from "../shared/twitch-irc.js?v=8";
+    import * as stageSetup from "../shared/stage.js?v=8";
+    try { (stageSetup.setupStage || stageSetup.fitStage)?.(); } catch (e) { console.warn("stage setup skipped", e); }
 
     const channel = param("channel", "its_vasper");
     const maxMessages = Number(param("max", "6"));
@@ -174,7 +176,10 @@
       chat.appendChild(box);
       typeInto(body, buildText(body, text, emotes)).then(() => box.classList.add("is-done"));
 
-      while (chat.children.length > maxMessages) removeMessage(chat.firstElementChild);
+      // Count only messages that aren't already on their way out; looping on
+      // chat.children would never end while the oldest one plays its exit animation
+      const live = [...chat.querySelectorAll(".msg:not(.is-leaving)")];
+      live.slice(0, Math.max(0, live.length - maxMessages)).forEach(removeMessage);
       if (fadeAfter > 0) setTimeout(() => removeMessage(box), fadeAfter * 1000);
     }
 

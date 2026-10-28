@@ -106,6 +106,7 @@ vasper-overlays/
 │   └── alerts.html
 ├── shared/
 │   ├── crt.css           palette, pixel box, scanlines
+│   ├── fonts/            bundled pixel fonts + licences
 │   ├── stage.js          fits the 1920x1080 stage, adds the Home button
 │   └── twitch-irc.js     anonymous Twitch chat client
 └── docs/                 README images
@@ -113,6 +114,6 @@ vasper-overlays/
 
 ## Credits
 
-Fonts: [Press Start 2P](https://fonts.google.com/specimen/Press+Start+2P) by CodeMan38 and [VT323](https://fonts.google.com/specimen/VT323) by Peter Hull, both under the SIL Open Font License.
+Fonts: [Press Start 2P](https://fonts.google.com/specimen/Press+Start+2P) by CodeMan38 and [VT323](https://fonts.google.com/specimen/VT323) by Peter Hull, both under the SIL Open Font License. Latin subsets are bundled in `shared/fonts/` with their licence files, so the overlays make no requests to Google Fonts.
 
 Design and code by Íris Dórdio. Released under the MIT License.
