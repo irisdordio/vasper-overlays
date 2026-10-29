@@ -67,7 +67,7 @@ This relies on OBS telling the page when the stream starts. Keep the browser sou
 | Parameter | Default | Notes |
 | --- | --- | --- |
 | `channel` | `its_vasper` | Any Twitch channel |
-| `max` | `6` | Messages on screen |
+| `max` | `4` | Messages on screen |
 | `fade` | `45` | Seconds before a message leaves. `0` keeps it |
 | `colors` | `palette` | `twitch` uses each viewer's own colour |
 | `hide` | common bots | Comma-separated names to ignore |
