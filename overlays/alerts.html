@@ -62,21 +62,9 @@
       color: var(--cyan);
       overflow-wrap: anywhere;
     }
-
-    /* Screen flash when an alert lands */
-    .flash {
-      position: fixed;
-      inset: 0;
-      background: var(--paper);
-      opacity: 0;
-      pointer-events: none;
-    }
-    .flash.is-on { animation: flash 0.35s ease-out; }
-    @keyframes flash { 0% { opacity: 0.35; } 100% { opacity: 0; } }
   </style>
 </head>
 <body>
-  <div class="flash" id="flash"></div>
   <div class="stage" id="stage" aria-live="assertive"></div>
 
   <script type="module">
@@ -192,7 +180,6 @@
 
     /* ---------- Queue: one alert at a time ---------- */
     const stage = document.getElementById("stage");
-    const flash = document.getElementById("flash");
     const queue = [];
     let busy = false;
 
@@ -223,9 +210,6 @@
       box.append(drawIcon(item.icon), text);
       stage.replaceChildren(box);
 
-      flash.classList.remove("is-on");
-      void flash.offsetWidth;            // restart the flash animation
-      flash.classList.add("is-on");
       jingle(item.notes);
 
       setTimeout(() => {
