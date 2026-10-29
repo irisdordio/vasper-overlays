@@ -6,94 +6,96 @@
   <title>Vasper Frame</title>
   <link rel="stylesheet" href="../shared/crt.css?v=8">
   <style>
-    /* Gameplay frame: a thin stroke round the edge, transparent in the middle.
-       --w is the stroke width, set with ?size= */
-    :root {
-      --w: 8px;
-      --top: var(--pink);
-      --bottom: var(--blue);
-      --line: var(--ink);
-    }
-
-    .frame { position: absolute; inset: 0; pointer-events: none; }
-    .frame > * { position: absolute; }
-
-    /* Four sides: pink across the top, blue across the bottom,
-       the sides switch from one to the other halfway down */
-    .side--top    { top: 0;    left: 0; right: 0; height: var(--w); background: var(--top); }
-    .side--bottom { bottom: 0; left: 0; right: 0; height: var(--w); background: var(--bottom); }
-    .side--left,
-    .side--right  {
-      top: 0; bottom: 0; width: var(--w);
-      background: linear-gradient(to bottom, var(--top) 0 50%, var(--bottom) 50% 100%);
-    }
-    .side--left  { left: 0; }
-    .side--right { right: 0; }
-
-    /* Thin ink line on the inside, so the stroke reads against bright games */
-    .inner {
-      inset: var(--w);
-      box-shadow: inset 0 0 0 calc(var(--px) / 2) var(--line);
-    }
-
-    /* Inner corners step in by one stroke, like a pixel rounded corner */
-    .corner { width: var(--w); height: var(--w); }
-    .corner--tl { top: var(--w);    left: var(--w);  background: var(--top); }
-    .corner--tr { top: var(--w);    right: var(--w); background: var(--top); }
-    .corner--bl { bottom: var(--w); left: var(--w);  background: var(--bottom); }
-    .corner--br { bottom: var(--w); right: var(--w); background: var(--bottom); }
-    /* the ink line follows the step */
-    .corner--tl { box-shadow: 2px 2px 0 0 var(--line); }
-    .corner--tr { box-shadow: -2px 2px 0 0 var(--line); }
-    .corner--bl { box-shadow: 2px -2px 0 0 var(--line); }
-    .corner--br { box-shadow: -2px -2px 0 0 var(--line); }
-
-    /* Optional: the seam between pink and blue on the sides drifts slowly */
-    .is-animated .side--left,
-    .is-animated .side--right {
-      background: linear-gradient(to bottom, var(--top) 0 50%, var(--bottom) 50% 100%);
-      background-size: 100% 200%;
-      animation: seam 12s ease-in-out infinite alternate;
-    }
-    @keyframes seam { from { background-position: 0 25%; } to { background-position: 0 75%; } }
+    /* Gameplay frame: a thick border round a 16:9 window for the game.
+       The window is 1776x999 at (72, 40). In OBS, put the game capture
+       under this source and set its position and size to match. */
+    #frame { position: absolute; inset: 0; width: 1920px; height: 1080px; pointer-events: none; }
   </style>
 </head>
 <body>
-  <div class="frame" id="frame" aria-hidden="true">
-    <div class="side--top"></div>
-    <div class="side--bottom"></div>
-    <div class="side--left"></div>
-    <div class="side--right"></div>
-    <div class="inner"></div>
-    <div class="corner corner--tl"></div>
-    <div class="corner corner--tr"></div>
-    <div class="corner corner--bl"></div>
-    <div class="corner corner--br"></div>
-  </div>
+  <svg id="frame" viewBox="0 0 1920 1080" aria-hidden="true" shape-rendering="crispEdges">
+    <defs>
+      <!-- Pastel: soft vertical blend from the avatar palette -->
+      <linearGradient id="pastel" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0"    stop-color="#ffe3f1"/>
+        <stop offset="0.45" stop-color="#e9c8f5"/>
+        <stop offset="1"    stop-color="#b9c4ff"/>
+      </linearGradient>
+
+      <!-- Stripes: the same moving stripes as the scenes -->
+      <pattern id="stripes" width="192" height="192" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)">
+        <rect width="48" height="192" x="0"   fill="#2c1450"/>
+        <rect width="48" height="192" x="48"  fill="#5b2f94"/>
+        <rect width="48" height="192" x="96"  fill="#2c1450"/>
+        <rect width="48" height="192" x="144" fill="#7a3aa8"/>
+        <animateTransform id="stripes-run" attributeName="patternTransform" type="translate"
+          from="0 0" to="-192 0" dur="4s" repeatCount="indefinite" additive="sum"/>
+      </pattern>
+
+      <!-- Scanlines laid over the frame only, never over the game -->
+      <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse">
+        <rect y="3" width="4" height="1" fill="#000" fill-opacity="0.12"/>
+      </pattern>
+    </defs>
+
+    <path id="fill" fill-rule="evenodd" fill="url(#pastel)"/>
+    <path id="scanlines" fill-rule="evenodd" fill="url(#scan)"/>
+    <!-- Rim round the window: ink outside, a light line, then a pink line next to the game -->
+    <path id="rim-ink"   fill="none" stroke="#140a24" stroke-width="12"/>
+    <path id="rim-light" fill="none" stroke="#f6efff" stroke-width="6"/>
+    <path id="rim-pink"  fill="none" stroke="#ff6fb5" stroke-width="2"/>
+  </svg>
 
   <script type="module">
     import { param } from "../shared/twitch-irc.js?v=8";
     import * as stageSetup from "../shared/stage.js?v=8";
     try { (stageSetup.setupStage || stageSetup.fitStage)?.(); } catch (e) { console.warn("stage setup skipped", e); }
 
-    const root = document.documentElement.style;
+    /* The game window */
+    const WIN = { x: 72, y: 40, w: 1776, h: 999 };
+    const radius = Math.min(96, Math.max(0, Number(param("radius", "40")) || 0));
+    const STEP = 4;   // one pixel of the SNES grid
 
-    /* Stroke width in px, kept on the 4px pixel grid */
-    const size = Math.min(40, Math.max(4, Number(param("size", "8")) || 8));
-    root.setProperty("--w", `${Math.round(size / 4) * 4}px`);
+    /* Rounded rectangle whose curves are drawn as 4px stairs */
+    function pixelRoundRect({ x, y, w, h }, r) {
+      r = Math.round(r / STEP) * STEP;
+      if (r === 0) return `M${x} ${y}H${x + w}V${y + h}H${x}Z`;
+      // for each row of the curve, how far the edge is pushed in
+      const inset = [];
+      for (let i = 0; i < r; i += STEP) {
+        const dy = r - i - STEP / 2;
+        inset.push(Math.round((r - Math.sqrt(r * r - dy * dy)) / STEP) * STEP);
+      }
+      const pts = [];
+      // top-left, going down the left edge from the top
+      inset.forEach((d, i) => { pts.push([x + d, y + i * STEP], [x + d, y + (i + 1) * STEP]); });
+      // bottom-left
+      [...inset].reverse().forEach((d, i) => { pts.push([x + d, y + h - r + i * STEP], [x + d, y + h - r + (i + 1) * STEP]); });
+      // bottom-right, going up the right edge
+      inset.forEach((d, i) => { pts.push([x + w - d, y + h - i * STEP], [x + w - d, y + h - (i + 1) * STEP]); });
+      // top-right
+      [...inset].reverse().forEach((d, i) => { pts.push([x + w - d, y + r - i * STEP], [x + w - d, y + r - (i + 1) * STEP]); });
+      return "M" + pts.map((p) => p.join(" ")).join("L") + "Z";
+    }
 
-    /* Colour sets */
-    const COLORS = {
-      duo:   ["var(--pink)", "var(--blue)"],
-      pink:  ["var(--pink)", "var(--pink)"],
-      blue:  ["var(--blue)", "var(--blue)"],
-      paper: ["var(--paper)", "var(--paper)"],
-    };
-    const [top, bottom] = COLORS[param("colors", "duo")] || COLORS.duo;
-    root.setProperty("--top", top);
-    root.setProperty("--bottom", bottom);
+    const win = pixelRoundRect(WIN, radius);
+    const outer = "M0 0H1920V1080H0Z";
+    document.getElementById("fill").setAttribute("d", outer + win);
+    document.getElementById("scanlines").setAttribute("d", outer + win);
 
-    if (param("animate") === "1") document.getElementById("frame").classList.add("is-animated");
+    /* Rims are centred on a path pushed out from the window, so they sit on the frame */
+    const ring = (grow) => pixelRoundRect(
+      { x: WIN.x - grow, y: WIN.y - grow, w: WIN.w + grow * 2, h: WIN.h + grow * 2 }, radius + grow);
+    document.getElementById("rim-ink").setAttribute("d", ring(6));
+    document.getElementById("rim-light").setAttribute("d", ring(3));
+    document.getElementById("rim-pink").setAttribute("d", ring(1));
+
+    /* Theme */
+    if (param("theme", "pastel") === "stripes") {
+      document.getElementById("fill").setAttribute("fill", "url(#stripes)");
+    } else {
+      document.getElementById("stripes-run").remove();   // nothing to animate
+    }
   </script>
 </body>
 </html>

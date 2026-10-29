@@ -15,7 +15,7 @@ Plain HTML, CSS and JavaScript. No build step, no framework, no account or token
 | `overlays/scene.html` | Full-screen *starting soon*, *be right back* and *ending* scenes, each with its own motion (see below) |
 | `overlays/chat.html` | Live Twitch chat as RPG dialogue boxes, with emotes and typewriter text |
 | `overlays/alerts.html` | Sub, resub, gift sub, raid and cheer alerts with pixel icons and an 8-bit jingle |
-| `overlays/frame.html` | Thin pink and blue stroke round the edge of the screen for gameplay |
+| `overlays/frame.html` | Thick rounded border round the game, in pastel or the scene stripes |
 
 ![Chat and alerts](docs/chat-alerts.png)
 
@@ -91,13 +91,14 @@ Messages starting with `!` are skipped, and messages deleted by moderators disap
 
 ### Frame
 
+A thick border round a 16:9 window for the game, with pixel-stepped rounded corners and a light and pink rim next to the game.
+
 | Parameter | Default | Notes |
 | --- | --- | --- |
-| `size` | `8` | Stroke width in px, from `4` to `40`, snapped to the 4px grid |
-| `colors` | `duo` | `duo` (pink top, blue bottom), `pink`, `blue` or `paper` |
-| `animate` | off | `1` makes the pink and blue seam on the sides drift slowly |
+| `theme` | `pastel` | `pastel` (soft pink to lavender) or `stripes` (the moving stripes from the scenes) |
+| `radius` | `40` | Corner radius in px, `0` to `96`, drawn in 4px steps |
 
-Put it at the top of your gameplay scene, above the game capture. A thin ink line on the inside keeps it readable over bright games.
+In OBS, put the frame source above the game capture, then right-click the game capture, choose **Transform → Edit Transform** and set **Position** to `72, 40` and **Size** to `1776 x 999` (bounding box off). The game then sits exactly inside the window.
 
 ## How it works
 
