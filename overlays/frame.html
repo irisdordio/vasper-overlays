@@ -18,24 +18,21 @@
       position: absolute;
       inset: 0;
       background:
-        repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0 1px, rgba(0, 0, 0, 0.45) 2px 3px, rgba(0, 0, 0, 0) 4px),
-        radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.7) 100%),
+        repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0 2px, rgba(0, 0, 0, 0.22) 3px, rgba(0, 0, 0, 0) 4px),
+        radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.35) 100%),
         var(--plum);
       clip-path: path(evenodd, "M0 0H1920V1080H0Z M48 48H1872V1032H48Z");
       animation: frame-flicker 5s infinite steps(1);
     }
     @keyframes frame-flicker {
       0%, 100% { opacity: 1; }
-      31%      { opacity: 0.86; }
-      32%      { opacity: 1; }
-      67%      { opacity: 0.9; }
-      68%      { opacity: 1; }
-      88%      { opacity: 0.8; }
-      89%      { opacity: 1; }
+      47%      { opacity: 0.94; }
+      48%      { opacity: 1; }
+      82%      { opacity: 0.96; }
+      83%      { opacity: 1; }
     }
 
-    /* Pixel line round the game, with notched corners like the chat boxes,
-       and a pink and blue RGB split behind it like a CRT */
+    /* Pixel line round the game, with notched corners like the chat boxes */
     .window {
       position: absolute;
       inset: var(--b);
@@ -43,15 +40,26 @@
         0 calc(var(--px) * -1) 0 0 var(--paper),
         0 var(--px) 0 0 var(--paper),
         calc(var(--px) * -1) 0 0 0 var(--paper),
-        var(--px) 0 0 0 var(--paper),
-        -3px 0 0 4px rgba(255, 111, 181, 0.85),
-        3px 0 0 4px rgba(79, 157, 255, 0.85);
+        var(--px) 0 0 0 var(--paper);
+    }
+
+    /* Small pixel stars scattered over the border, twinkling slowly */
+    .star {
+      position: absolute;
+      width: 4px; height: 4px;
+      opacity: 0;
+      animation: star-twinkle 4s ease-in-out infinite;
+    }
+    @keyframes star-twinkle {
+      0%, 100% { opacity: 0; }
+      50%      { opacity: 0.7; }
     }
   </style>
 </head>
 <body>
   <div class="border" aria-hidden="true"></div>
   <div class="window" aria-hidden="true"></div>
+  <div id="stars" aria-hidden="true"></div>
   <!-- ?crt=full: light scanlines over the game too -->
   <div class="crt" id="crt" aria-hidden="true" hidden></div>
 
@@ -59,6 +67,34 @@
     import { param } from "../shared/twitch-irc.js?v=8";
     import * as stageSetup from "../shared/stage.js?v=8";
     try { (stageSetup.setupStage || stageSetup.fitStage)?.(); } catch (e) { console.warn("stage setup skipped", e); }
+
+    /* Stars: a few per side, kept inside the border and on the 4px grid */
+    const B = 48;
+    const count = Math.min(40, Math.max(0, Number(param("stars", "16"))));
+    const colors = ["var(--paper)", "var(--pink-soft)", "var(--cyan)"];
+    const snap = (n) => Math.round(n / 4) * 4;
+    for (let i = 0; i < count; i++) {
+      const side = i % 4;   // top, right, bottom, left
+      const along = 80 + Math.random() * ((side % 2 ? 1080 : 1920) - 160);
+      const across = 16 + Math.random() * (B - 32);   // stays clear of both edges of the border
+      const [x, y] = [
+        [along, across],
+        [1920 - across, along],
+        [along, 1080 - across],
+        [across, along],
+      ][side];
+      const c = colors[i % colors.length];
+      const s = document.createElement("span");
+      s.className = "star";
+      s.style.left = `${snap(x)}px`;
+      s.style.top = `${snap(y)}px`;
+      s.style.background = c;
+      s.style.boxShadow = `4px 0 ${c}, -4px 0 ${c}, 0 4px ${c}, 0 -4px ${c}`;   // tiny plus, like the scene sparkles
+      const dur = 3 + Math.random() * 4;
+      s.style.animationDuration = `${dur}s`;
+      s.style.animationDelay = `${-Math.random() * dur}s`;
+      document.getElementById("stars").appendChild(s);
+    }
 
     if (param("crt") === "full") {
       const crt = document.getElementById("crt");

@@ -91,10 +91,11 @@ Messages starting with `!` are skipped, and messages deleted by moderators disap
 
 ### Frame
 
-A 48px pixel border round the game: plum with strong scanlines, a dark CRT vignette and flicker, and a light pixel line with notched corners next to the game, with a pink and blue RGB split behind it.
+A 48px pixel border round the game: plum with light CRT scanlines, vignette and flicker, a light pixel line with notched corners next to the game, and a few small pixel stars twinkling on the border.
 
 | Parameter | Default | Notes |
 | --- | --- | --- |
+| `stars` | `16` | Number of pixel stars on the border, `0` to `40` |
 | `crt` | border only | `full` also lays light scanlines over the game |
 
 In OBS, put the frame source above the game capture, then right-click the game capture, choose **Transform → Edit Transform** and set **Position** to `48, 27` and **Size** to `1824 x 1026` (bounding box off). The border trims about 21px off the top and bottom of the game.
