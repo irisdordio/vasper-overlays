@@ -6,70 +6,52 @@
   <title>Vasper Frame</title>
   <link rel="stylesheet" href="../shared/crt.css?v=8">
   <style>
-    /* Gameplay frame: an even 40px border with soft rounded corners round
-       the game. The window is 1840x1000 at (40, 40). In OBS, put the game
-       capture under this source at position 40, 22 and size 1840 x 1035;
-       the frame trims about 18px off its top and bottom edges. */
-    #frame { position: absolute; inset: 0; width: 1920px; height: 1080px; pointer-events: none; }
+    /* Gameplay frame: a simple pixel border with a CRT look.
+       The game window is 1856x1016 at (32, 32). In OBS, put the game capture
+       under this source at position 32, 18 and size 1856 x 1044; the border
+       trims about 14px off its top and bottom edges. */
+    :root { --b: 32px; }
+
+    /* Border fill: plum with scanlines and a soft CRT vignette, cut out
+       in the middle so nothing here ever touches the game */
+    .border {
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0 2px, rgba(0, 0, 0, 0.28) 3px, rgba(0, 0, 0, 0) 4px),
+        radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.45) 100%),
+        var(--plum);
+      clip-path: path(evenodd, "M0 0H1920V1080H0Z M32 32H1888V1048H32Z");
+      animation: crt-flicker 6s infinite steps(1);
+    }
+
+    /* Pixel line round the game, with notched corners like the chat boxes */
+    .window {
+      position: absolute;
+      inset: var(--b);
+      box-shadow:
+        0 calc(var(--px) * -1) 0 0 var(--paper),
+        0 var(--px) 0 0 var(--paper),
+        calc(var(--px) * -1) 0 0 0 var(--paper),
+        var(--px) 0 0 0 var(--paper);
+    }
   </style>
 </head>
 <body>
-  <svg id="frame" viewBox="0 0 1920 1080" aria-hidden="true">
-    <defs>
-      <!-- Soft white to lilac, like a frosted bezel -->
-      <linearGradient id="pastel" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0"   stop-color="#fbf8ff"/>
-        <stop offset="0.5" stop-color="#e6dcfa"/>
-        <stop offset="1"   stop-color="#c7c1f2"/>
-      </linearGradient>
-
-      <!-- The moving stripes from the scenes, for ?theme=stripes -->
-      <pattern id="stripes" width="192" height="192" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)">
-        <rect width="48" height="192" x="0"   fill="#2c1450"/>
-        <rect width="48" height="192" x="48"  fill="#5b2f94"/>
-        <rect width="48" height="192" x="96"  fill="#2c1450"/>
-        <rect width="48" height="192" x="144" fill="#7a3aa8"/>
-        <animateTransform id="stripes-run" attributeName="patternTransform" type="translate"
-          from="0 0" to="-192 0" dur="4s" repeatCount="indefinite" additive="sum"/>
-      </pattern>
-
-      <!-- Hole for the game -->
-      <mask id="hole">
-        <rect width="1920" height="1080" fill="#fff"/>
-        <rect id="win" x="40" y="40" width="1840" height="1000" rx="36" fill="#000"/>
-      </mask>
-
-      <!-- Soft shade the frame casts onto the edge of the game -->
-      <filter id="soft" x="-5%" y="-5%" width="110%" height="110%">
-        <feGaussianBlur stdDeviation="6"/>
-      </filter>
-    </defs>
-
-    <!-- Shade just inside the window -->
-    <rect id="shade" x="40" y="40" width="1840" height="1000" rx="36" fill="none"
-      stroke="#2c1450" stroke-opacity="0.35" stroke-width="10" filter="url(#soft)"/>
-    <!-- Frame -->
-    <rect id="fill" width="1920" height="1080" fill="url(#pastel)" mask="url(#hole)"/>
-    <!-- Thin highlight on the frame's inner edge -->
-    <rect id="rim" x="39" y="39" width="1842" height="1002" rx="37" fill="none"
-      stroke="#ffffff" stroke-opacity="0.9" stroke-width="2"/>
-  </svg>
+  <div class="border" aria-hidden="true"></div>
+  <div class="window" aria-hidden="true"></div>
+  <!-- ?crt=full: light scanlines over the game too -->
+  <div class="crt" id="crt" aria-hidden="true" hidden></div>
 
   <script type="module">
     import { param } from "../shared/twitch-irc.js?v=8";
     import * as stageSetup from "../shared/stage.js?v=8";
     try { (stageSetup.setupStage || stageSetup.fitStage)?.(); } catch (e) { console.warn("stage setup skipped", e); }
 
-    /* Corner radius */
-    const r = Math.min(96, Math.max(0, Number(param("radius", "36")) || 0));
-    for (const id of ["win", "shade"]) document.getElementById(id).setAttribute("rx", r);
-    document.getElementById("rim").setAttribute("rx", r + 1);
-
-    /* Theme */
-    if (param("theme", "pastel") === "stripes") {
-      document.getElementById("fill").setAttribute("fill", "url(#stripes)");
-    } else {
-      document.getElementById("stripes-run").remove();   // nothing to animate
+    if (param("crt") === "full") {
+      const crt = document.getElementById("crt");
+      crt.hidden = false;
+      crt.style.opacity = "0.5";
     }
   </script>
 </body>
