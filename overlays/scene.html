@@ -352,21 +352,83 @@
     } else {
       document.body.classList.add("has-timer");
       const total = minutes * 60 * 1000;
-      const endAt = Date.now() + total;
+      const waitingText = mode === "brb" ? "PAUSED" : "PRESS START";
       const pad = (n) => String(n).padStart(2, "0");
-      const tick = () => {
-        const msLeft = Math.max(0, endAt - Date.now());
+      let endAt = null;
+      let timeout = null;
+
+      const render = (msLeft) => {
         const left = Math.round(msLeft / 1000);
         $("timer-value").textContent = `${pad(Math.floor(left / 60))}:${pad(left % 60)}`;
         $("progress").style.transform = `scaleX(${1 - msLeft / total})`;
-        if (left === 0) {
+        return left;
+      };
+      const tick = () => {
+        if (render(Math.max(0, endAt - Date.now())) === 0) {
           $("press-start").textContent = copy.done;
           return;
         }
-        setTimeout(tick, 250);
+        timeout = setTimeout(tick, 250);
       };
-      $("press-start").textContent = mode === "brb" ? "PAUSED" : "PRESS START";
-      tick();
+      const start = (startedAt) => {
+        if (endAt !== null) return;
+        endAt = startedAt + total;
+        tick();
+      };
+      const reset = () => {
+        clearTimeout(timeout);
+        endAt = null;
+        render(total);
+        $("press-start").textContent = waitingText;
+      };
+
+      $("press-start").textContent = waitingText;
+      render(total);
+
+      /* In OBS the starting countdown waits for "Start Streaming".
+         Outside OBS (a normal browser, the demo page) there is no
+         stream to wait for, so it starts straight away. ?start=load
+         restores the old behaviour inside OBS too. */
+      const obs = window.obsstudio;
+      const waitForStream = mode === "starting" && obs && param("start", "stream") !== "load";
+
+      if (!waitForStream) {
+        start(Date.now());
+      } else {
+        /* The start time is kept so the countdown survives a reload of
+           the browser source (e.g. "Refresh browser when scene becomes
+           active") instead of jumping back to the full length. */
+        const KEY = "vasper:stream-started-at";
+        const MAX_AGE = 12 * 60 * 60 * 1000;
+        const save = (t) => { try { localStorage.setItem(KEY, String(t)); } catch {} };
+        const forget = () => { try { localStorage.removeItem(KEY); } catch {} };
+        const saved = () => {
+          try {
+            const t = Number(localStorage.getItem(KEY));
+            return t && Date.now() - t < MAX_AGE ? t : null;
+          } catch { return null; }
+        };
+
+        addEventListener("obsStreamingStarted", () => {
+          const now = Date.now();
+          save(now);
+          reset();
+          start(now);
+        });
+        addEventListener("obsStreamingStopped", () => {
+          forget();
+          reset();
+        });
+
+        /* Already live when the page loads? Pick up where it was. */
+        try {
+          obs.getStatus?.((status) => {
+            if (status?.streaming && endAt === null) start(saved() ?? Date.now());
+          });
+        } catch (e) {
+          console.warn("OBS status unavailable", e);
+        }
+      }
     }
 
     /* ---------- Sparkles: rise, twinkle or fall depending on the scene ---------- */

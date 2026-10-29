@@ -42,6 +42,7 @@ Every option is a URL parameter, so one file covers many scenes.
 | --- | --- | --- |
 | `mode` | `starting` | `starting`, `brb`, `ending` |
 | `minutes` | `5` | Countdown length. `0` hides the timer |
+| `start` | `stream` | When the `starting` countdown begins in OBS: `stream` waits for **Start Streaming**, `load` starts as soon as the page loads |
 | `speed` | `1` | Background speed multiplier, from `0.25` to `4` |
 | `title`, `subtitle` | per mode | `?title=Super%20Metroid%20night` |
 | `handle` | `its_Vasper` | Name shown in the top corner |
@@ -54,6 +55,12 @@ Each scene moves differently, so viewers can tell them apart at a glance:
 | `starting` | Stripes rush left, sparkles rise, a loading bar fills with the countdown |
 | `brb` | Stripes freeze and breathe, sparkles twinkle in place, the title pulses like a pause menu |
 | `ending` | Stripes drift back the other way, sparkles fall, the title drops in letter by letter |
+
+#### Starting countdown and OBS
+
+Inside OBS, the `starting` countdown holds at its full length until you press **Start Streaming**, so viewers always get the whole countdown however long you spend setting up. It resets if you stop the stream, and if the browser source reloads mid-countdown it picks up where it was instead of starting over.
+
+This relies on OBS telling the page when the stream starts. Keep the browser source's **Page permissions** at *Read access to OBS status information* (the default) or higher. Opened in a normal browser, where there is no stream to wait for, the countdown starts straight away. The `brb` countdown always starts when the scene appears.
 
 ### Chat
 
