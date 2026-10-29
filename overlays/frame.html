@@ -7,10 +7,10 @@
   <link rel="stylesheet" href="../shared/crt.css?v=8">
   <style>
     /* Gameplay frame: a simple pixel border with a CRT look.
-       The game window is 1856x1016 at (32, 32). In OBS, put the game capture
-       under this source at position 32, 18 and size 1856 x 1044; the border
-       trims about 14px off its top and bottom edges. */
-    :root { --b: 32px; }
+       The game window is 1824x984 at (48, 48). In OBS, put the game capture
+       under this source at position 48, 27 and size 1824 x 1026; the border
+       trims about 21px off its top and bottom edges. */
+    :root { --b: 48px; }
 
     /* Border fill: plum with scanlines and a soft CRT vignette, cut out
        in the middle so nothing here ever touches the game */
@@ -18,14 +18,24 @@
       position: absolute;
       inset: 0;
       background:
-        repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0 2px, rgba(0, 0, 0, 0.28) 3px, rgba(0, 0, 0, 0) 4px),
-        radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.45) 100%),
+        repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0 1px, rgba(0, 0, 0, 0.45) 2px 3px, rgba(0, 0, 0, 0) 4px),
+        radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.7) 100%),
         var(--plum);
-      clip-path: path(evenodd, "M0 0H1920V1080H0Z M32 32H1888V1048H32Z");
-      animation: crt-flicker 6s infinite steps(1);
+      clip-path: path(evenodd, "M0 0H1920V1080H0Z M48 48H1872V1032H48Z");
+      animation: frame-flicker 5s infinite steps(1);
+    }
+    @keyframes frame-flicker {
+      0%, 100% { opacity: 1; }
+      31%      { opacity: 0.86; }
+      32%      { opacity: 1; }
+      67%      { opacity: 0.9; }
+      68%      { opacity: 1; }
+      88%      { opacity: 0.8; }
+      89%      { opacity: 1; }
     }
 
-    /* Pixel line round the game, with notched corners like the chat boxes */
+    /* Pixel line round the game, with notched corners like the chat boxes,
+       and a pink and blue RGB split behind it like a CRT */
     .window {
       position: absolute;
       inset: var(--b);
@@ -33,7 +43,9 @@
         0 calc(var(--px) * -1) 0 0 var(--paper),
         0 var(--px) 0 0 var(--paper),
         calc(var(--px) * -1) 0 0 0 var(--paper),
-        var(--px) 0 0 0 var(--paper);
+        var(--px) 0 0 0 var(--paper),
+        -3px 0 0 4px rgba(255, 111, 181, 0.85),
+        3px 0 0 4px rgba(79, 157, 255, 0.85);
     }
   </style>
 </head>
