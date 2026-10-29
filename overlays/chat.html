@@ -11,19 +11,19 @@
     /* Chat column sits at the bottom left; the rest stays transparent */
     .chat {
       position: absolute;
-      left: 48px;
-      bottom: 48px;
-      width: 560px;
+      left: 40px;
+      bottom: 40px;
+      width: 440px;
       display: flex;
       flex-direction: column;
-      gap: 28px;
+      gap: 18px;
     }
-    .side-right .chat { left: auto; right: 48px; }
+    .side-right .chat { left: auto; right: 40px; }
 
     /* RPG dialogue box: name tag sits on the top edge */
     .msg {
-      padding: 28px 24px 18px;
-      margin-top: 12px;
+      padding: 20px 18px 12px;
+      margin-top: 10px;
       animation: pop-in 0.35s var(--ease-out) both;
     }
     .msg.is-leaving { animation: pop-out 0.25s var(--ease-in) both; }
@@ -33,25 +33,25 @@
 
     .msg__name {
       position: absolute;
-      top: -18px;
-      left: 16px;
-      padding: 8px 12px;
+      top: -15px;
+      left: 12px;
+      padding: 6px 10px;
       background: var(--ink);
       font-family: var(--font-display);
-      font-size: 14px;
+      font-size: 12px;
       box-shadow: 0 0 0 4px currentColor;
     }
 
     .msg__text {
-      font-size: 34px;
+      font-size: 27px;
       line-height: 1.05;
       color: var(--paper);
       overflow-wrap: anywhere;
     }
 
     .msg__text img.emote {
-      height: 34px;
-      vertical-align: -6px;
+      height: 27px;
+      vertical-align: -5px;
       image-rendering: pixelated;
     }
 
@@ -59,12 +59,12 @@
        like an RPG text box waiting for you to press A */
     .msg__next {
       position: absolute;
-      right: 14px;
-      bottom: 8px;
+      right: 10px;
+      bottom: 6px;
       width: 0; height: 0;
-      border-left: 8px solid transparent;
-      border-right: 8px solid transparent;
-      border-top: 10px solid var(--pink);
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 8px solid var(--pink);
       visibility: hidden;
     }
     .msg.is-done .msg__next { visibility: visible; }
@@ -79,7 +79,7 @@
     try { (stageSetup.setupStage || stageSetup.fitStage)?.(); } catch (e) { console.warn("stage setup skipped", e); }
 
     const channel = param("channel", "its_vasper");
-    const maxMessages = Number(param("max", "6"));
+    const maxMessages = Number(param("max", "4"));
     const fadeAfter = Number(param("fade", "45"));        // seconds, 0 = never
     const useTwitchColors = param("colors", "palette") === "twitch";
     const hidden = param("hide", "nightbot,streamelements,streamlabs,moobot")
