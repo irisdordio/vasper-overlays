@@ -263,7 +263,7 @@
 <body class="mode-starting">
   <div class="stripes" aria-hidden="true"></div>
   <div id="sparks" aria-hidden="true"></div>
-  <div class="handle pixel-box chroma" id="handle">its_Vasper</div>
+  <div class="handle pixel-box chroma" id="handle" hidden></div>
 
   <section class="hero">
   <div class="band"></div>
@@ -310,7 +310,12 @@
     $("eyebrow").textContent = copy.eyebrow;
     $("subtitle").textContent = param("subtitle", copy.subtitle);
     $("timer-label").textContent = copy.timer;
-    $("handle").textContent = param("handle", "its_Vasper");
+    /* The corner name tag is off unless ?handle= is set */
+    const handle = param("handle");
+    if (handle) {
+      $("handle").textContent = handle;
+      $("handle").hidden = false;
+    }
 
     /* Title: the ending scene drops it in letter by letter */
     const title = param("title", copy.title);
