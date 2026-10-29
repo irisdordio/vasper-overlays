@@ -6,23 +6,24 @@
   <title>Vasper Frame</title>
   <link rel="stylesheet" href="../shared/crt.css?v=8">
   <style>
-    /* Gameplay frame: a thick border round a 16:9 window for the game.
-       The window is 1776x999 at (72, 40). In OBS, put the game capture
-       under this source and set its position and size to match. */
+    /* Gameplay frame: an even 40px border with soft rounded corners round
+       the game. The window is 1840x1000 at (40, 40). In OBS, put the game
+       capture under this source at position 40, 22 and size 1840 x 1035;
+       the frame trims about 18px off its top and bottom edges. */
     #frame { position: absolute; inset: 0; width: 1920px; height: 1080px; pointer-events: none; }
   </style>
 </head>
 <body>
-  <svg id="frame" viewBox="0 0 1920 1080" aria-hidden="true" shape-rendering="crispEdges">
+  <svg id="frame" viewBox="0 0 1920 1080" aria-hidden="true">
     <defs>
-      <!-- Pastel: soft vertical blend from the avatar palette -->
+      <!-- Soft white to lilac, like a frosted bezel -->
       <linearGradient id="pastel" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0"    stop-color="#ffe3f1"/>
-        <stop offset="0.45" stop-color="#e9c8f5"/>
-        <stop offset="1"    stop-color="#b9c4ff"/>
+        <stop offset="0"   stop-color="#fbf8ff"/>
+        <stop offset="0.5" stop-color="#e6dcfa"/>
+        <stop offset="1"   stop-color="#c7c1f2"/>
       </linearGradient>
 
-      <!-- Stripes: the same moving stripes as the scenes -->
+      <!-- The moving stripes from the scenes, for ?theme=stripes -->
       <pattern id="stripes" width="192" height="192" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)">
         <rect width="48" height="192" x="0"   fill="#2c1450"/>
         <rect width="48" height="192" x="48"  fill="#5b2f94"/>
@@ -32,18 +33,26 @@
           from="0 0" to="-192 0" dur="4s" repeatCount="indefinite" additive="sum"/>
       </pattern>
 
-      <!-- Scanlines laid over the frame only, never over the game -->
-      <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse">
-        <rect y="3" width="4" height="1" fill="#000" fill-opacity="0.12"/>
-      </pattern>
+      <!-- Hole for the game -->
+      <mask id="hole">
+        <rect width="1920" height="1080" fill="#fff"/>
+        <rect id="win" x="40" y="40" width="1840" height="1000" rx="36" fill="#000"/>
+      </mask>
+
+      <!-- Soft shade the frame casts onto the edge of the game -->
+      <filter id="soft" x="-5%" y="-5%" width="110%" height="110%">
+        <feGaussianBlur stdDeviation="6"/>
+      </filter>
     </defs>
 
-    <path id="fill" fill-rule="evenodd" fill="url(#pastel)"/>
-    <path id="scanlines" fill-rule="evenodd" fill="url(#scan)"/>
-    <!-- Rim round the window: ink outside, a light line, then a pink line next to the game -->
-    <path id="rim-ink"   fill="none" stroke="#140a24" stroke-width="12"/>
-    <path id="rim-light" fill="none" stroke="#f6efff" stroke-width="6"/>
-    <path id="rim-pink"  fill="none" stroke="#ff6fb5" stroke-width="2"/>
+    <!-- Shade just inside the window -->
+    <rect id="shade" x="40" y="40" width="1840" height="1000" rx="36" fill="none"
+      stroke="#2c1450" stroke-opacity="0.35" stroke-width="10" filter="url(#soft)"/>
+    <!-- Frame -->
+    <rect id="fill" width="1920" height="1080" fill="url(#pastel)" mask="url(#hole)"/>
+    <!-- Thin highlight on the frame's inner edge -->
+    <rect id="rim" x="39" y="39" width="1842" height="1002" rx="37" fill="none"
+      stroke="#ffffff" stroke-opacity="0.9" stroke-width="2"/>
   </svg>
 
   <script type="module">
@@ -51,44 +60,10 @@
     import * as stageSetup from "../shared/stage.js?v=8";
     try { (stageSetup.setupStage || stageSetup.fitStage)?.(); } catch (e) { console.warn("stage setup skipped", e); }
 
-    /* The game window */
-    const WIN = { x: 72, y: 40, w: 1776, h: 999 };
-    const radius = Math.min(96, Math.max(0, Number(param("radius", "40")) || 0));
-    const STEP = 4;   // one pixel of the SNES grid
-
-    /* Rounded rectangle whose curves are drawn as 4px stairs */
-    function pixelRoundRect({ x, y, w, h }, r) {
-      r = Math.round(r / STEP) * STEP;
-      if (r === 0) return `M${x} ${y}H${x + w}V${y + h}H${x}Z`;
-      // for each row of the curve, how far the edge is pushed in
-      const inset = [];
-      for (let i = 0; i < r; i += STEP) {
-        const dy = r - i - STEP / 2;
-        inset.push(Math.round((r - Math.sqrt(r * r - dy * dy)) / STEP) * STEP);
-      }
-      const pts = [];
-      // top-left, going down the left edge from the top
-      inset.forEach((d, i) => { pts.push([x + d, y + i * STEP], [x + d, y + (i + 1) * STEP]); });
-      // bottom-left
-      [...inset].reverse().forEach((d, i) => { pts.push([x + d, y + h - r + i * STEP], [x + d, y + h - r + (i + 1) * STEP]); });
-      // bottom-right, going up the right edge
-      inset.forEach((d, i) => { pts.push([x + w - d, y + h - i * STEP], [x + w - d, y + h - (i + 1) * STEP]); });
-      // top-right
-      [...inset].reverse().forEach((d, i) => { pts.push([x + w - d, y + r - i * STEP], [x + w - d, y + r - (i + 1) * STEP]); });
-      return "M" + pts.map((p) => p.join(" ")).join("L") + "Z";
-    }
-
-    const win = pixelRoundRect(WIN, radius);
-    const outer = "M0 0H1920V1080H0Z";
-    document.getElementById("fill").setAttribute("d", outer + win);
-    document.getElementById("scanlines").setAttribute("d", outer + win);
-
-    /* Rims are centred on a path pushed out from the window, so they sit on the frame */
-    const ring = (grow) => pixelRoundRect(
-      { x: WIN.x - grow, y: WIN.y - grow, w: WIN.w + grow * 2, h: WIN.h + grow * 2 }, radius + grow);
-    document.getElementById("rim-ink").setAttribute("d", ring(6));
-    document.getElementById("rim-light").setAttribute("d", ring(3));
-    document.getElementById("rim-pink").setAttribute("d", ring(1));
+    /* Corner radius */
+    const r = Math.min(96, Math.max(0, Number(param("radius", "36")) || 0));
+    for (const id of ["win", "shade"]) document.getElementById(id).setAttribute("rx", r);
+    document.getElementById("rim").setAttribute("rx", r + 1);
 
     /* Theme */
     if (param("theme", "pastel") === "stripes") {

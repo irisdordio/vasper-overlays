@@ -15,7 +15,7 @@ Plain HTML, CSS and JavaScript. No build step, no framework, no account or token
 | `overlays/scene.html` | Full-screen *starting soon*, *be right back* and *ending* scenes, each with its own motion (see below) |
 | `overlays/chat.html` | Live Twitch chat as RPG dialogue boxes, with emotes and typewriter text |
 | `overlays/alerts.html` | Sub, resub, gift sub, raid and cheer alerts with pixel icons and an 8-bit jingle |
-| `overlays/frame.html` | Thick rounded border round the game, in pastel or the scene stripes |
+| `overlays/frame.html` | Soft rounded border round the game, white to lilac |
 
 ![Chat and alerts](docs/chat-alerts.png)
 
@@ -91,14 +91,14 @@ Messages starting with `!` are skipped, and messages deleted by moderators disap
 
 ### Frame
 
-A thick border round a 16:9 window for the game, with pixel-stepped rounded corners and a light and pink rim next to the game.
+An even 40px border with soft rounded corners round the game, white at the top fading to lilac, with a thin highlight on its inner edge.
 
 | Parameter | Default | Notes |
 | --- | --- | --- |
-| `theme` | `pastel` | `pastel` (soft pink to lavender) or `stripes` (the moving stripes from the scenes) |
-| `radius` | `40` | Corner radius in px, `0` to `96`, drawn in 4px steps |
+| `theme` | `pastel` | `pastel` (white to lilac) or `stripes` (the moving stripes from the scenes) |
+| `radius` | `36` | Corner radius in px, `0` to `96` |
 
-In OBS, put the frame source above the game capture, then right-click the game capture, choose **Transform → Edit Transform** and set **Position** to `72, 40` and **Size** to `1776 x 999` (bounding box off). The game then sits exactly inside the window.
+In OBS, put the frame source above the game capture, then right-click the game capture, choose **Transform → Edit Transform** and set **Position** to `40, 22` and **Size** to `1840 x 1035` (bounding box off). The frame trims about 18px off the top and bottom of the game.
 
 ## How it works
 
