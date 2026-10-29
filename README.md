@@ -45,7 +45,7 @@ Every option is a URL parameter, so one file covers many scenes.
 | `start` | `stream` | When the `starting` countdown begins in OBS: `stream` waits for **Start Streaming**, `load` starts as soon as the page loads |
 | `speed` | `1` | Background speed multiplier, from `0.25` to `4` |
 | `title`, `subtitle` | per mode | `?title=Super%20Metroid%20night` |
-| `handle` | `its_Vasper` | Name logo in the top corner. `?handle=` (empty) hides it |
+| `handle` | `its_Vasper` | Name in the top corner. `?handle=` (empty) hides it |
 | `avatar` | none | Path or URL to a pixel avatar |
 
 Each scene moves differently, so viewers can tell them apart at a glance:

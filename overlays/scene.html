@@ -126,64 +126,17 @@
       color: var(--paper);
     }
 
-    /* Name logo, top left. Sits above the CRT layer so it stays crisp in the
-       dark corner. The skew lives on an inner wrapper so entry animations
-       can move the outer element without fighting it. */
+    /* Name, top left: plain pixel text with a hard shadow, no box.
+       Sits above the CRT layer so it stays crisp in the dark corner. */
     .handle {
       position: absolute;
-      top: 56px; left: 72px;
+      top: 64px; left: 80px;
       z-index: 101;
       font-family: var(--font-display);
-      font-size: 44px;
+      font-size: 24px;
+      color: var(--paper);
+      text-shadow: 3px 3px 0 var(--ink);
       animation: appear 0.45s var(--ease-out) 0.1s both;
-    }
-    .handle__skew {
-      position: relative;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      transform: skewX(-10deg);
-    }
-    /* Banded pixel gradient, plus a light sweep that passes every few seconds */
-    .handle__name {
-      background:
-        linear-gradient(100deg, transparent 0 44%, rgba(255, 255, 255, 0.95) 47% 51%, transparent 54% 100%),
-        linear-gradient(180deg, var(--paper) 0 38%, var(--pink-soft) 38% 62%, var(--pink) 62% 100%);
-      background-size: 300% 100%, 100% 100%;
-      background-position: 100% 0, 0 0;
-      background-repeat: no-repeat;
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      /* pixel outline in ink, then a hard blue shadow for depth */
-      filter:
-        drop-shadow(3px 0 0 var(--ink)) drop-shadow(-3px 0 0 var(--ink))
-        drop-shadow(0 3px 0 var(--ink)) drop-shadow(0 -3px 0 var(--ink))
-        drop-shadow(5px 5px 0 var(--blue));
-      animation: handle-shine calc(6s / var(--speed)) linear 1.5s infinite;
-    }
-    @keyframes handle-shine {
-      0%, 78% { background-position: 100% 0, 0 0; }
-      100%    { background-position: 0% 0, 0 0; }
-    }
-    /* Speed lines trail behind the name */
-    .handle__lines { display: grid; gap: 7px; justify-items: end; }
-    .handle__lines i { display: block; height: 5px; }
-    .handle__lines i:nth-child(1) { width: 24px; background: var(--cyan); }
-    .handle__lines i:nth-child(2) { width: 40px; background: var(--pink); }
-    .handle__lines i:nth-child(3) { width: 16px; background: var(--blue); }
-    .mode-brb .handle__lines { display: none; }   /* everything holds still on pause */
-
-    .handle__spark {
-      position: absolute;
-      color: var(--cyan);
-      animation: handle-twinkle calc(2.4s / var(--speed)) ease-in-out infinite;
-    }
-    .handle__spark--1 { right: -36px; top: -22px; font-size: 28px; }
-    .handle__spark--2 { right: -56px; top: 14px; font-size: 16px; color: var(--pink-soft); animation-delay: -1.2s; }
-    @keyframes handle-twinkle {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50%      { opacity: 0.25; transform: scale(0.6); }
     }
 
     .spark {
@@ -315,14 +268,7 @@
 <body class="mode-starting">
   <div class="stripes" aria-hidden="true"></div>
   <div id="sparks" aria-hidden="true"></div>
-  <div class="handle" id="handle">
-    <div class="handle__skew">
-      <span class="handle__lines" aria-hidden="true"><i></i><i></i><i></i></span>
-      <span class="handle__name" id="handle-name">its_Vasper</span>
-      <span class="handle__spark handle__spark--1" aria-hidden="true">&#10022;</span>
-      <span class="handle__spark handle__spark--2" aria-hidden="true">&#10023;</span>
-    </div>
-  </div>
+  <div class="handle" id="handle">its_Vasper</div>
 
   <section class="hero">
   <div class="band"></div>
@@ -369,9 +315,9 @@
     $("eyebrow").textContent = copy.eyebrow;
     $("subtitle").textContent = param("subtitle", copy.subtitle);
     $("timer-label").textContent = copy.timer;
-    /* Name logo in the corner; ?handle= (empty) hides it */
+    /* Name in the corner; ?handle= (empty) hides it */
     const handle = param("handle", "its_Vasper");
-    if (handle) $("handle-name").textContent = handle;
+    if (handle) $("handle").textContent = handle;
     else $("handle").hidden = true;
 
     /* Title: the ending scene drops it in letter by letter */
