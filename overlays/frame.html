@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <title>Vasper Frame</title>
+  <link rel="stylesheet" href="../shared/crt.css?v=8">
+  <style>
+    /* Gameplay frame: a thin stroke round the edge, transparent in the middle.
+       --w is the stroke width, set with ?size= */
+    :root {
+      --w: 8px;
+      --top: var(--pink);
+      --bottom: var(--blue);
+      --line: var(--ink);
+    }
+
+    .frame { position: absolute; inset: 0; pointer-events: none; }
+    .frame > * { position: absolute; }
+
+    /* Four sides: pink across the top, blue across the bottom,
+       the sides switch from one to the other halfway down */
+    .side--top    { top: 0;    left: 0; right: 0; height: var(--w); background: var(--top); }
+    .side--bottom { bottom: 0; left: 0; right: 0; height: var(--w); background: var(--bottom); }
+    .side--left,
+    .side--right  {
+      top: 0; bottom: 0; width: var(--w);
+      background: linear-gradient(to bottom, var(--top) 0 50%, var(--bottom) 50% 100%);
+    }
+    .side--left  { left: 0; }
+    .side--right { right: 0; }
+
+    /* Thin ink line on the inside, so the stroke reads against bright games */
+    .inner {
+      inset: var(--w);
+      box-shadow: inset 0 0 0 calc(var(--px) / 2) var(--line);
+    }
+
+    /* Inner corners step in by one stroke, like a pixel rounded corner */
+    .corner { width: var(--w); height: var(--w); }
+    .corner--tl { top: var(--w);    left: var(--w);  background: var(--top); }
+    .corner--tr { top: var(--w);    right: var(--w); background: var(--top); }
+    .corner--bl { bottom: var(--w); left: var(--w);  background: var(--bottom); }
+    .corner--br { bottom: var(--w); right: var(--w); background: var(--bottom); }
+    /* the ink line follows the step */
+    .corner--tl { box-shadow: 2px 2px 0 0 var(--line); }
+    .corner--tr { box-shadow: -2px 2px 0 0 var(--line); }
+    .corner--bl { box-shadow: 2px -2px 0 0 var(--line); }
+    .corner--br { box-shadow: -2px -2px 0 0 var(--line); }
+
+    /* Optional: the seam between pink and blue on the sides drifts slowly */
+    .is-animated .side--left,
+    .is-animated .side--right {
+      background: linear-gradient(to bottom, var(--top) 0 50%, var(--bottom) 50% 100%);
+      background-size: 100% 200%;
+      animation: seam 12s ease-in-out infinite alternate;
+    }
+    @keyframes seam { from { background-position: 0 25%; } to { background-position: 0 75%; } }
+  </style>
+</head>
+<body>
+  <div class="frame" id="frame" aria-hidden="true">
+    <div class="side--top"></div>
+    <div class="side--bottom"></div>
+    <div class="side--left"></div>
+    <div class="side--right"></div>
+    <div class="inner"></div>
+    <div class="corner corner--tl"></div>
+    <div class="corner corner--tr"></div>
+    <div class="corner corner--bl"></div>
+    <div class="corner corner--br"></div>
+  </div>
+
+  <script type="module">
+    import { param } from "../shared/twitch-irc.js?v=8";
+    import * as stageSetup from "../shared/stage.js?v=8";
+    try { (stageSetup.setupStage || stageSetup.fitStage)?.(); } catch (e) { console.warn("stage setup skipped", e); }
+
+    const root = document.documentElement.style;
+
+    /* Stroke width in px, kept on the 4px pixel grid */
+    const size = Math.min(40, Math.max(4, Number(param("size", "8")) || 8));
+    root.setProperty("--w", `${Math.round(size / 4) * 4}px`);
+
+    /* Colour sets */
+    const COLORS = {
+      duo:   ["var(--pink)", "var(--blue)"],
+      pink:  ["var(--pink)", "var(--pink)"],
+      blue:  ["var(--blue)", "var(--blue)"],
+      paper: ["var(--paper)", "var(--paper)"],
+    };
+    const [top, bottom] = COLORS[param("colors", "duo")] || COLORS.duo;
+    root.setProperty("--top", top);
+    root.setProperty("--bottom", bottom);
+
+    if (param("animate") === "1") document.getElementById("frame").classList.add("is-animated");
+  </script>
+</body>
+</html>

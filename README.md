@@ -15,6 +15,7 @@ Plain HTML, CSS and JavaScript. No build step, no framework, no account or token
 | `overlays/scene.html` | Full-screen *starting soon*, *be right back* and *ending* scenes, each with its own motion (see below) |
 | `overlays/chat.html` | Live Twitch chat as RPG dialogue boxes, with emotes and typewriter text |
 | `overlays/alerts.html` | Sub, resub, gift sub, raid and cheer alerts with pixel icons and an 8-bit jingle |
+| `overlays/frame.html` | Thin pink and blue stroke round the edge of the screen for gameplay |
 
 ![Chat and alerts](docs/chat-alerts.png)
 
@@ -45,7 +46,7 @@ Every option is a URL parameter, so one file covers many scenes.
 | `start` | `stream` | When the `starting` countdown begins in OBS: `stream` waits for **Start Streaming**, `load` starts as soon as the page loads |
 | `speed` | `1` | Background speed multiplier, from `0.25` to `4` |
 | `title`, `subtitle` | per mode | `?title=Super%20Metroid%20night` |
-| `handle` | `its_Vasper` | Name in the top corner. `?handle=` (empty) hides it |
+| `handle` | `its_Vasper` | Credit line under PRESS START (`© 2026 its_Vasper`). `?handle=` (empty) hides it |
 | `avatar` | none | Path or URL to a pixel avatar |
 
 Each scene moves differently, so viewers can tell them apart at a glance:
@@ -88,6 +89,16 @@ Messages starting with `!` are skipped, and messages deleted by moderators disap
 | `minbits` | `1` | Ignore smaller cheers |
 | `test` | off | `1` loops through every alert type |
 
+### Frame
+
+| Parameter | Default | Notes |
+| --- | --- | --- |
+| `size` | `8` | Stroke width in px, from `4` to `40`, snapped to the 4px grid |
+| `colors` | `duo` | `duo` (pink top, blue bottom), `pink`, `blue` or `paper` |
+| `animate` | off | `1` makes the pink and blue seam on the sides drift slowly |
+
+Put it at the top of your gameplay scene, above the game capture. A thin ink line on the inside keeps it readable over bright games.
+
 ## How it works
 
 The chat and alerts connect to Twitch chat anonymously over WebSocket (`shared/twitch-irc.js`). Twitch sends subs, gift subs, raids and cheers through chat, so no login is needed.
@@ -110,7 +121,8 @@ vasper-overlays/
 ├── overlays/
 │   ├── scene.html
 │   ├── chat.html
-│   └── alerts.html
+│   ├── alerts.html
+│   └── frame.html
 ├── shared/
 │   ├── crt.css           palette, pixel box, scanlines
 │   ├── fonts/            bundled pixel fonts + licences

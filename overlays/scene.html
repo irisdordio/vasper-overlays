@@ -126,17 +126,15 @@
       color: var(--paper);
     }
 
-    /* Name, top left: plain pixel text with a hard shadow, no box.
-       Sits above the CRT layer so it stays crisp in the dark corner. */
-    .handle {
+    /* Name as a title-screen credit line under PRESS START */
+    .credit {
       position: absolute;
-      top: 64px; left: 80px;
-      z-index: 101;
+      bottom: 56px; left: 0; right: 0;
+      text-align: center;
       font-family: var(--font-display);
-      font-size: 24px;
-      color: var(--paper);
-      text-shadow: 3px 3px 0 var(--ink);
-      animation: appear 0.45s var(--ease-out) 0.1s both;
+      font-size: 18px;
+      letter-spacing: 2px;
+      color: var(--pink-soft);
     }
 
     .spark {
@@ -268,7 +266,6 @@
 <body class="mode-starting">
   <div class="stripes" aria-hidden="true"></div>
   <div id="sparks" aria-hidden="true"></div>
-  <div class="handle" id="handle">its_Vasper</div>
 
   <section class="hero">
   <div class="band"></div>
@@ -290,6 +287,7 @@
   </section>
 
   <p class="press-start blink" id="press-start">PRESS START</p>
+  <p class="credit" id="credit">&copy; its_Vasper</p>
   <div class="crt crt--vignette" aria-hidden="true"></div>
 
   <script type="module">
@@ -315,10 +313,10 @@
     $("eyebrow").textContent = copy.eyebrow;
     $("subtitle").textContent = param("subtitle", copy.subtitle);
     $("timer-label").textContent = copy.timer;
-    /* Name in the corner; ?handle= (empty) hides it */
+    /* Credit line under PRESS START, like a title screen; ?handle= (empty) hides it */
     const handle = param("handle", "its_Vasper");
-    if (handle) $("handle").textContent = handle;
-    else $("handle").hidden = true;
+    if (handle) $("credit").textContent = `\u00a9 ${new Date().getFullYear()} ${handle}`;
+    else $("credit").hidden = true;
 
     /* Title: the ending scene drops it in letter by letter */
     const title = param("title", copy.title);
