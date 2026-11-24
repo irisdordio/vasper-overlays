@@ -97,8 +97,11 @@ A 48px pixel border round the game: plum with light CRT scanlines, vignette and 
 | --- | --- | --- |
 | `stars` | `16` | Number of pixel stars on the border, `0` to `40` |
 | `crt` | border only | `full` also lays light scanlines over the game |
+| `aspect` | none | Shape of the game window for captures that are not 16:9, e.g. `16:10` or `4:3`. The border stays 48px on the short sides and widens on the other two |
 
 In OBS, put the frame source above the game capture, then right-click the game capture, choose **Transform → Edit Transform** and set **Position** to `48, 27` and **Size** to `1824 x 1026` (bounding box off). The border trims about 21px off the top and bottom of the game.
+
+For a game that is not 16:9, add `aspect` to the frame URL and fit the capture with a bounding box. For `?aspect=16:10`: **Position** `172, 48`, **Bounding Box Type** *Scale to inner bounds*, **Bounding Box Size** `1576 x 984`, **Alignment in Bounding Box** *Center*. Opened in a browser, the frame logs the window size and position for any `aspect` to the console.
 
 ## How it works
 
