@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <title>Vasper Avatar</title>
+  <link rel="stylesheet" href="../shared/crt.css?v=8">
+  <style>
+    /* Talking avatar (PNGtuber style): a pixel portrait in a small window
+       that hops while you speak. The mic level comes from OBS itself through
+       obs-websocket, so no microphone permission is needed in the browser
+       source. See the README for setup. */
+    :root { --size: 192px; --gap: 64px; }
+
+    .card {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: calc(var(--px) * 4);
+    }
+    .card.bl { left: var(--gap); bottom: var(--gap); }
+    .card.br { right: var(--gap); bottom: var(--gap); }
+    .card.tl { left: var(--gap); top: var(--gap); }
+    .card.tr { right: var(--gap); top: var(--gap); }
+
+    /* Portrait window: same pink and purple stripes as the channel avatar */
+    .portrait {
+      position: relative;
+      width: calc(var(--size) + var(--px) * 6);
+      height: calc(var(--size) + var(--px) * 6);
+      display: grid;
+      place-items: end center;
+      overflow: hidden;
+      background:
+        repeating-linear-gradient(135deg, var(--violet) 0 16px, var(--plum) 16px 32px);
+    }
+    .portrait.pixel-box::after { z-index: 2; }
+
+    .sprite {
+      width: var(--size);
+      height: var(--size);
+      image-rendering: pixelated;
+      object-fit: contain;
+      object-position: bottom;
+      animation: idle 2.4s steps(1) infinite;
+    }
+    /* Idle: breathe one pixel up and down */
+    @keyframes idle {
+      0%, 100% { transform: translate3d(0, 0, 0); }
+      50%      { transform: translate3d(0, calc(var(--px) * -1), 0); }
+    }
+    /* Talking: small hops, on the pixel grid */
+    .talking .sprite { animation: hop 0.24s steps(1) infinite; }
+    @keyframes hop {
+      0%, 100% { transform: translate3d(0, 0, 0); }
+      50%      { transform: translate3d(0, calc(var(--px) * -3), 0); }
+    }
+
+    .pwrap { position: relative; }
+
+    /* Sound pixels next to the portrait while talking */
+    .waves {
+      position: absolute;
+      top: 50%;
+      width: calc(var(--px) * 6);
+      height: calc(var(--px) * 12);
+      opacity: 0;
+      transform: translateY(-50%);
+    }
+    .waves.left { left: calc(var(--px) * -10); }
+    .waves.right { right: calc(var(--px) * -10); transform: translateY(-50%) scaleX(-1); }
+    .waves i {
+      position: absolute;
+      left: 0;
+      width: var(--px);
+      background: var(--pink);
+    }
+    .waves i:nth-child(1) { left: 0;                       top: calc(var(--px) * 4); height: calc(var(--px) * 4); }
+    .waves i:nth-child(2) { left: calc(var(--px) * 2.5);   top: calc(var(--px) * 2); height: calc(var(--px) * 8); }
+    .waves i:nth-child(3) { left: calc(var(--px) * 5);     top: 0;                   height: calc(var(--px) * 12); }
+    .talking .waves { animation: waves 0.48s steps(1) infinite; }
+    @keyframes waves {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0.35; }
+    }
+
+    .tag {
+      font-family: var(--font-display);
+      font-size: 14px;
+      line-height: 1;
+      color: var(--ink);
+      background: var(--pink);
+      padding: calc(var(--px) * 2) calc(var(--px) * 3);
+      box-shadow: calc(var(--px) * 2) calc(var(--px) * 2) 0 rgba(0, 0, 0, 0.45);
+    }
+    .tag:empty { display: none; }
+
+    /* Small status line, only shown when opened in a normal browser */
+    .status {
+      position: absolute;
+      left: 24px;
+      top: 24px;
+      font-family: var(--font-display);
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--paper);
+      background: var(--ink-90);
+      padding: 10px 14px;
+      max-width: 900px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .sprite, .talking .sprite, .talking .waves { animation: none; }
+      .talking .waves { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card bl" id="card">
+    <div class="pwrap">
+      <div class="portrait pixel-box pixel-box--pink">
+        <img class="sprite" id="sprite" alt="">
+      </div>
+      <span class="waves left" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="waves right" aria-hidden="true"><i></i><i></i><i></i></span>
+    </div>
+    <div class="tag" id="tag"></div>
+  </div>
+  <div class="status" id="status" hidden></div>
+
+  <script type="module">
+    import { param } from "../shared/twitch-irc.js?v=8";
+    import * as stageSetup from "../shared/stage.js?v=8";
+    try { (stageSetup.setupStage || stageSetup.fitStage)?.(); } catch (e) { console.warn("stage setup skipped", e); }
+
+    const $ = (id) => document.getElementById(id);
+    const card = $("card");
+    const sprite = $("sprite");
+    const inObs = "obsstudio" in window;
+
+    /* ---------- Layout ---------- */
+    const corner = param("corner", "bl");
+    card.className = `card ${["bl", "br", "tl", "tr"].includes(corner) ? corner : "bl"}`;
+    const size = Math.min(480, Math.max(96, Number(param("size", "192")) || 192));
+    const gap = Math.min(600, Math.max(0, Number(param("gap", "64")) || 0));
+    document.documentElement.style.setProperty("--size", `${Math.round(size / 4) * 4}px`);
+    document.documentElement.style.setProperty("--gap", `${gap}px`);
+    $("tag").textContent = param("name", "its_Vasper");
+
+    const status = (text) => {
+      console.info(`[avatar] ${text}`);
+      if (inObs) return;
+      $("status").hidden = false;
+      $("status").textContent = text;
+    };
+
+    /* ---------- Frames ---------- */
+    /* Built-in placeholder, drawn from text maps, until ?idle= points to your own art */
+    const PAL = { H: "#4f9dff", h: "#2c5fb8", S: "#ffd9ea", K: "#140a24", P: "#ff6fb5", W: "#f6efff" };
+    const BASE = [
+      "................",
+      ".....HHHHHH.....",
+      "...HHHHHHHHHH...",
+      "..HHHHHHHHHHHH..",
+      "..HHhHHHHHHhHH..",
+      ".HHhSSSSSSSShHH.",
+      ".HHSSSSSSSSSSHH.",
+      ".HHSKKSSSSKKSHH.",
+      ".HHSKWSSSSKWSHH.",
+      ".HHSSSSSSSSSSHH.",
+      ".HHSPSSSSSSPSHH.",
+      ".HHSSSSKKSSSSHH.",
+      ".HH.SSSSSSSS.HH.",
+      ".HH..SSSSSS..HH.",
+      ".H....SSSS....H.",
+      "................",
+    ];
+    const edit = (map, rows) => map.map((r, i) => rows[i] ?? r);
+    const MAPS = {
+      idle: BASE,
+      talk: edit(BASE, { 11: ".HHSSSSKKSSSSHH.", 12: ".HH.SSSPPSSS.HH." }),
+      blink: edit(BASE, { 7: ".HHSSSSSSSSSSHH.", 8: ".HHSKKSSSSKKSHH." }),
+    };
+    const draw = (map) => {
+      const c = document.createElement("canvas");
+      c.width = c.height = 16;
+      const g = c.getContext("2d");
+      map.forEach((row, y) => [...row].forEach((ch, x) => {
+        if (PAL[ch]) { g.fillStyle = PAL[ch]; g.fillRect(x, y, 1, 1); }
+      }));
+      return c.toDataURL();
+    };
+    const custom = param("idle");
+    const frames = custom
+      ? { idle: custom, talk: param("talk", custom), blink: param("blink", "") }
+      : { idle: draw(MAPS.idle), talk: draw(MAPS.talk), blink: draw(MAPS.blink) };
+    // Preload so swapping frames never flashes
+    Object.values(frames).filter(Boolean).forEach((src) => { const i = new Image(); i.src = src; });
+
+    let talking = false;
+    let blinking = false;
+    const render = () => {
+      sprite.src = talking ? frames.talk : (blinking && frames.blink) ? frames.blink : frames.idle;
+      card.classList.toggle("talking", talking);
+    };
+    render();
+
+    /* Blink every few seconds when there is a blink frame */
+    const blinkLoop = () => {
+      setTimeout(() => {
+        blinking = true; render();
+        setTimeout(() => { blinking = false; render(); blinkLoop(); }, 140);
+      }, 2500 + Math.random() * 3500);
+    };
+    if (frames.blink) blinkLoop();
+
+    /* ---------- Voice detection ---------- */
+    const threshold = Number(param("threshold", "-35"));   // dB
+    const hold = Number(param("hold", "220"));             // ms to keep talking after the level drops
+    let lastLoud = 0;
+    const feed = (db) => {
+      const now = performance.now();
+      if (db > threshold) lastLoud = now;
+      const next = now - lastLoud < hold;
+      if (next !== talking) { talking = next; render(); }
+    };
+    const toDb = (amp) => (amp > 0 ? 20 * Math.log10(amp) : -100);
+
+    /* 1. OBS: read the mic meter from obs-websocket (Tools > WebSocket Server Settings) */
+    async function sha256b64(text) {
+      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+      return btoa(String.fromCharCode(...new Uint8Array(buf)));
+    }
+    function connectObs() {
+      const port = param("port", "4455");
+      const password = param("password", "");
+      const micName = param("mic", "Mic/Aux");
+      const ws = new WebSocket(`ws://127.0.0.1:${port}`);
+      ws.onmessage = async (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.op === 0) {
+          const d = { rpcVersion: 1, eventSubscriptions: 1 << 16 };   // InputVolumeMeters only
+          const auth = msg.d.authentication;
+          if (auth) {
+            if (!password) { status("OBS asks for a password: add &password=... to the URL"); return; }
+            const secret = await sha256b64(password + auth.salt);
+            d.authentication = await sha256b64(secret + auth.challenge);
+          }
+          ws.send(JSON.stringify({ op: 1, d }));
+        } else if (msg.op === 2) {
+          status(`Connected to OBS, listening to "${micName}"`);
+        } else if (msg.op === 5 && msg.d.eventType === "InputVolumeMeters") {
+          const input = msg.d.eventData.inputs.find((i) => i.inputName === micName);
+          if (!input) return;
+          const peak = Math.max(0, ...input.inputLevelsMul.map((ch) => ch[1] ?? 0));
+          feed(toDb(peak));
+        }
+      };
+      ws.onclose = (e) => {
+        status(e.code === 4009 ? "Wrong OBS WebSocket password" : "Not connected to OBS, retrying…");
+        if (talking) { talking = false; render(); }
+        setTimeout(connectObs, 3000);
+      };
+    }
+
+    /* 2. Normal browser: use the microphone directly */
+    async function useMic() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const ctx = new AudioContext();
+        const an = ctx.createAnalyser();
+        an.fftSize = 512;
+        ctx.createMediaStreamSource(stream).connect(an);
+        const buf = new Float32Array(an.fftSize);
+        const tick = () => {
+          an.getFloatTimeDomainData(buf);
+          let peak = 0;
+          for (const v of buf) peak = Math.max(peak, Math.abs(v));
+          feed(toDb(peak));
+          requestAnimationFrame(tick);
+        };
+        tick();
+        status("Using this browser's microphone");
+      } catch {
+        status("No microphone access. In OBS, use obs-websocket (see README) or add ?demo=1");
+      }
+    }
+
+    /* 3. Demo: fake speech in bursts */
+    function demo() {
+      const burst = () => {
+        const words = 3 + Math.floor(Math.random() * 6);
+        let i = 0;
+        const word = () => {
+          if (i++ >= words) { setTimeout(burst, 900 + Math.random() * 1800); return; }
+          feed(0);
+          setTimeout(word, 120 + Math.random() * 160);
+        };
+        word();
+      };
+      setInterval(() => feed(-100), 50);
+      burst();
+    }
+
+    if (param("demo") === "1") demo();
+    else if (inObs || param("password") || param("obs") === "1") connectObs();
+    else useMic();
+  </script>
+</body>
+</html>
