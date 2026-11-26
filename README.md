@@ -17,6 +17,7 @@ Plain HTML, CSS and JavaScript. No build step, no framework, no account or token
 | `overlays/alerts.html` | Sub, resub, gift sub, raid and cheer alerts with pixel icons and an 8-bit jingle |
 | `overlays/frame.html` | Simple pixel border round the game with a CRT look |
 | `overlays/avatar.html` | Pixel avatar that hops and opens its mouth while you talk (PNGtuber style) |
+| `overlays/counter.html` | Attempt counter for challenge runs, controlled from chat by you and your mods |
 
 ![Chat and alerts](docs/chat-alerts.png)
 
@@ -131,6 +132,46 @@ The password stays on your computer (the page only talks to `127.0.0.1`), but do
 | `gap` | `64` | Distance from the edges of the screen in px |
 | `demo` | off | `1` fakes talking, for testing the look |
 
+### Attempt counter
+
+A small box in a corner of the game that counts failed attempts at one goal, such as a Shiyu Defense floor or a Deadly Assault boss. Made for challenge series like *Element Lock: A-Rank Only*.
+
+You and your moderators control it from Twitch chat, so you never leave the game:
+
+| Command | What it does |
+| --- | --- |
+| `!fail` | Adds one attempt |
+| `!unfail` | Takes one away, for mistakes |
+| `!clear` | Shows *CLEARED! in N attempts* (the winning try counts too), then goes back to 0 |
+| `!reset` | Back to 0 without the banner |
+| `!setfail 12` | Sets an exact number |
+
+Everyone else's commands are ignored. `!fail` has a short cooldown, so if you and a mod type it at the same time it only counts once. The count is saved for each goal, so it survives an OBS restart or a refreshed source.
+
+In a normal browser, or in OBS through **Interact** on the source, the keys `+`, `-`, `C` and `0` do the same.
+
+Example URL:
+
+```
+overlays/counter.html?element=physical&goal=Shiyu%20Defense&note=A-Rank%20only%20%C2%B7%20no%20swaps
+```
+
+| Parameter | Default | Notes |
+| --- | --- | --- |
+| `channel` | `its_vasper` | Channel whose chat controls the counter |
+| `element` | none | `physical`, `electric`, `fire`, `ice` or `ether`. Sets the accent colour and the top line |
+| `goal` | none | What you are trying to beat, shown on the top line. Each goal keeps its own count |
+| `label` | `ATTEMPTS` | Big word above the rules line |
+| `note` | none | Short line under the label, e.g. the challenge rules |
+| `start` | saved count | Forces a starting number |
+| `corner` | `tr` | `tr`, `tl`, `br` or `bl` |
+| `gap` | `72` | Distance from the edges of the screen in px. `72` sits just inside the frame overlay |
+| `mods` | `1` | `0` lets only you control it |
+| `allow` | none | Extra usernames that may control it, comma-separated |
+| `cooldown` | `3` | Seconds between two `!fail` counts |
+| `clearsecs` | `8` | How long the CLEARED banner stays |
+| `demo` | off | `1` fails a few times and clears, on a loop. Never touches the saved count |
+
 ## How it works
 
 The chat and alerts connect to Twitch chat anonymously over WebSocket (`shared/twitch-irc.js`). Twitch sends subs, gift subs, raids and cheers through chat, so no login is needed.
@@ -154,7 +195,9 @@ vasper-overlays/
 │   ├── scene.html
 │   ├── chat.html
 │   ├── alerts.html
-│   └── frame.html
+│   ├── frame.html
+│   ├── avatar.html
+│   └── counter.html
 ├── shared/
 │   ├── crt.css           palette, pixel box, scanlines
 │   ├── fonts/            bundled pixel fonts + licences
