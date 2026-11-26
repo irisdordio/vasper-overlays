@@ -16,7 +16,6 @@ Plain HTML, CSS and JavaScript. No build step, no framework, no account or token
 | `overlays/chat.html` | Live Twitch chat as RPG dialogue boxes, with emotes and typewriter text |
 | `overlays/alerts.html` | Sub, resub, gift sub, raid and cheer alerts with pixel icons and an 8-bit jingle |
 | `overlays/frame.html` | Simple pixel border round the game with a CRT look |
-| `overlays/avatar.html` | Pixel avatar that hops and opens its mouth while you talk (PNGtuber style) |
 | `overlays/counter.html` | Attempt counter for challenge runs, controlled from chat by you and your mods |
 
 ![Chat and alerts](docs/chat-alerts.png)
@@ -106,32 +105,6 @@ In OBS, put the frame source above the game capture, then right-click the game c
 
 For a game that is not 16:9, add `aspect` to the frame URL and fit the capture with a bounding box. For `?aspect=16:10`: **Position** `172, 48`, **Bounding Box Type** *Scale to inner bounds*, **Bounding Box Size** `1576 x 984`, **Alignment in Bounding Box** *Center*. Opened in a browser, the frame logs the window size and position for any `aspect` to the console.
 
-### Avatar
-
-A pixel portrait in a small striped window with a name tag. It breathes while you are quiet and hops, with sound pixels on both sides, while you talk. Without your own art it shows a built-in placeholder face.
-
-The voice level comes from OBS itself through **obs-websocket**, which ships with OBS 28 and later, so the browser source never asks for microphone access:
-
-1. In OBS, open **Tools → WebSocket Server Settings**, tick **Enable WebSocket server** and set a password.
-2. Add a Browser source with `overlays/avatar.html?password=YOUR_PASSWORD`, Width 1920, Height 1080.
-3. Talk: the avatar follows the **Mic/Aux** meter. If your mic has another name in the Audio Mixer, add `&mic=Name`.
-
-The password stays on your computer (the page only talks to `127.0.0.1`), but don't show the source's properties on stream. A muted mic shows no level, so the avatar stays still. Opened in a normal browser, the page uses that browser's microphone instead.
-
-| Parameter | Default | Notes |
-| --- | --- | --- |
-| `password` | none | obs-websocket password |
-| `port` | `4455` | obs-websocket port |
-| `mic` | `Mic/Aux` | Name of the audio source to follow, as shown in the Audio Mixer |
-| `threshold` | `-35` | Level in dB that counts as talking. Raise it (e.g. `-25`) if background noise triggers it |
-| `hold` | `220` | Milliseconds to stay in the talking pose after you stop |
-| `idle`, `talk`, `blink` | built-in | Paths or URLs to your own frames: mouth closed, mouth open and eyes closed. Only `idle` is required |
-| `name` | `its_Vasper` | Name tag. `?name=` (empty) hides it |
-| `corner` | `bl` | `bl`, `br`, `tl` or `tr` |
-| `size` | `192` | Portrait size in px, `96` to `480` |
-| `gap` | `64` | Distance from the edges of the screen in px |
-| `demo` | off | `1` fakes talking, for testing the look |
-
 ### Attempt counter
 
 A small box in a corner of the game that counts failed attempts at one goal, such as a Shiyu Defense floor or a Deadly Assault boss. Made for challenge series like *Element Lock: A-Rank Only*.
@@ -196,7 +169,6 @@ vasper-overlays/
 │   ├── chat.html
 │   ├── alerts.html
 │   ├── frame.html
-│   ├── avatar.html
 │   └── counter.html
 ├── shared/
 │   ├── crt.css           palette, pixel box, scanlines
