@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <title>Vasper Attempt Counter</title>
+  <link rel="stylesheet" href="../shared/crt.css?v=8">
+  <style>
+    /* Attempt counter for challenge runs (e.g. Element Lock: A-Rank Only).
+       Counts failed attempts at one goal. You or your mods change it from
+       Twitch chat (!fail, !unfail, !clear, !reset), so you never leave the
+       game. The count survives a reload of the browser source. */
+    :root { --gap: 72px; --accent: var(--pink); }
+
+    .counter {
+      position: absolute;
+      width: 560px;
+      display: flex;
+      align-items: stretch;
+      overflow: hidden;
+      transition: transform 0.25s var(--ease-out);
+    }
+    .counter.tr { right: var(--gap); top: var(--gap); }
+    .counter.tl { left: var(--gap); top: var(--gap); }
+    .counter.br { right: var(--gap); bottom: var(--gap); }
+    .counter.bl { left: var(--gap); bottom: var(--gap); }
+
+    /* Element colour strip on the left */
+    .strip { flex: 0 0 calc(var(--px) * 5); background: var(--accent); }
+
+    .info {
+      flex: 1 1 auto;
+      min-width: 0;
+      padding: calc(var(--px) * 4) calc(var(--px) * 5);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: calc(var(--px) * 2);
+    }
+    .meta {
+      display: flex;
+      gap: calc(var(--px) * 3);
+      font-family: var(--font-display);
+      font-size: 12px;
+      line-height: 1.3;
+      color: #c9b8e8;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .meta .element { color: var(--accent); }
+    .meta .dot { color: var(--orchid); }
+    .label {
+      font-family: var(--font-display);
+      font-size: 24px;
+      line-height: 1;
+      color: var(--pink);
+    }
+    .note {
+      font-size: 26px;
+      line-height: 1;
+      color: #c9b8e8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .note:empty, .meta:empty { display: none; }
+
+    .count {
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      padding: calc(var(--px) * 4) calc(var(--px) * 6) calc(var(--px) * 4) 0;
+      font-family: var(--font-display);
+      font-size: 64px;
+      line-height: 1;
+      color: var(--paper);
+      text-shadow: calc(var(--px) * 1.5) calc(var(--px) * 1.5) 0 var(--accent);
+    }
+
+    /* +1: the number hops on the pixel grid and the box shakes once */
+    .count.bump { animation: bump 0.36s steps(3) 1; }
+    @keyframes bump {
+      0%   { transform: translate3d(0, 0, 0); }
+      33%  { transform: translate3d(0, calc(var(--px) * -4), 0) scale(1.15); }
+      66%  { transform: translate3d(0, calc(var(--px) * -1), 0); }
+      100% { transform: translate3d(0, 0, 0); }
+    }
+    .counter.shake { animation: shake 0.3s steps(4) 1; }
+    @keyframes shake {
+      25% { transform: translate3d(calc(var(--px) * -2), 0, 0); }
+      50% { transform: translate3d(calc(var(--px) * 2), 0, 0); }
+      75% { transform: translate3d(calc(var(--px) * -1), 0, 0); }
+    }
+
+    /* Clear banner: replaces the box contents for a few seconds */
+    .cleared {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      display: grid;
+      place-content: center;
+      gap: calc(var(--px) * 3);
+      text-align: center;
+      background: var(--accent);
+      color: var(--ink);
+      opacity: 0;
+      transform: translate3d(0, 100%, 0);
+      transition: transform 0.4s var(--ease-bounce), opacity 0.2s linear;
+    }
+    .cleared.show { opacity: 1; transform: translate3d(0, 0, 0); }
+    .cleared b { font-family: var(--font-display); font-size: 28px; font-weight: normal; }
+    .cleared span { font-size: 30px; line-height: 1; }
+
+    /* Help line, only shown when opened in a normal browser */
+    .status {
+      position: absolute;
+      left: 24px;
+      bottom: 24px;
+      font-family: var(--font-display);
+      font-size: 12px;
+      line-height: 1.8;
+      color: var(--paper);
+      background: var(--ink-90);
+      padding: 10px 14px;
+      max-width: 1100px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .count.bump, .counter.shake { animation: none; }
+      .cleared { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="counter tr pixel-box" id="counter">
+    <div class="strip" aria-hidden="true"></div>
+    <div class="info">
+      <div class="meta" id="meta"></div>
+      <div class="label" id="label"></div>
+      <div class="note" id="note"></div>
+    </div>
+    <div class="count" id="count">00</div>
+    <div class="cleared" id="cleared" aria-live="polite">
+      <b id="clearedTitle">CLEARED!</b>
+      <span id="clearedText"></span>
+    </div>
+  </div>
+  <div class="status" id="status" hidden></div>
+
+  <script type="module">
+    import { connectChat, param } from "../shared/twitch-irc.js?v=8";
+    import * as stageSetup from "../shared/stage.js?v=8";
+    try { (stageSetup.setupStage || stageSetup.fitStage)?.(); } catch (e) { console.warn("stage setup skipped", e); }
+
+    const $ = (id) => document.getElementById(id);
+    const box = $("counter");
+    const countEl = $("count");
+    const inObs = "obsstudio" in window;
+    const inFrame = window.self !== window.top;
+
+    /* ---------- Options ---------- */
+    const ELEMENTS = {
+      physical: "#ffd23f",
+      electric: "#4f9dff",
+      fire: "#ff7a45",
+      ice: "#9be7ff",
+      ether: "#ff6fb5",
+    };
+    const element = param("element", "").toLowerCase();
+    const goal = param("goal", "");
+    const channel = param("channel", "its_vasper").toLowerCase();
+    const cooldown = Math.max(0, Number(param("cooldown", "3")) || 0) * 1000;
+    const allowMods = param("mods", "1") !== "0";
+    const extraUsers = param("allow", "")
+      .toLowerCase()
+      .split(",")
+      .map((name) => name.trim())
+      .filter(Boolean);
+
+    if (ELEMENTS[element]) document.documentElement.style.setProperty("--accent", ELEMENTS[element]);
+    const corner = param("corner", "tr");
+    box.className = `counter pixel-box ${["bl", "br", "tl", "tr"].includes(corner) ? corner : "tr"}`;
+    const gap = Math.min(600, Math.max(0, Number(param("gap", "72")) || 0));
+    document.documentElement.style.setProperty("--gap", `${gap}px`);
+
+    // Top line: ELEMENT · GOAL (either can be left out). Built with textContent.
+    const metaParts = [ELEMENTS[element] ? element.toUpperCase() : "", goal.toUpperCase()].filter(Boolean);
+    metaParts.forEach((text, i) => {
+      if (i > 0) {
+        const dot = document.createElement("span");
+        dot.className = "dot";
+        dot.textContent = "·";
+        $("meta").append(dot);
+      }
+      const span = document.createElement("span");
+      span.textContent = text;
+      if (i === 0 && ELEMENTS[element]) span.className = "element";
+      $("meta").append(span);
+    });
+    $("label").textContent = param("label", "ATTEMPTS").toUpperCase();
+    $("note").textContent = param("note", "");
+
+    /* ---------- Count, saved per channel + goal ---------- */
+    const storeKey = `vasper-counter:${channel}:${goal.toLowerCase() || "default"}`;
+    const load = () => {
+      try { return Number(localStorage.getItem(storeKey)); } catch { return NaN; }
+    };
+    const isDemo = param("demo") === "1";
+    const save = (n) => {
+      if (isDemo) return; // the demo never touches a real saved count
+      try { localStorage.setItem(storeKey, String(n)); } catch { /* storage off: count lives in memory */ }
+    };
+
+    const startParam = param("start", "");
+    let count = startParam !== "" ? Number(startParam) : isDemo ? 0 : load();
+    if (!Number.isFinite(count) || count < 0) count = 0;
+    count = Math.min(999, Math.floor(count));
+
+    const render = () => {
+      countEl.textContent = String(count).padStart(2, "0");
+    };
+    const replay = (el, cls) => {
+      el.classList.remove(cls);
+      void el.offsetWidth; // restart the animation
+      el.classList.add(cls);
+    };
+
+    let lastAdd = 0;
+    function set(n, { animate = false } = {}) {
+      count = Math.min(999, Math.max(0, Math.floor(n)));
+      save(count);
+      render();
+      if (animate) {
+        replay(countEl, "bump");
+        replay(box, "shake");
+      }
+    }
+    function add() {
+      const now = Date.now();
+      // Cooldown stops a double count when you and a mod both type !fail
+      if (now - lastAdd < cooldown) return;
+      lastAdd = now;
+      set(count + 1, { animate: true });
+    }
+
+    let clearTimer;
+    function clear() {
+      const tries = count + 1; // the attempt that worked counts too
+      $("clearedTitle").textContent = "CLEARED!";
+      $("clearedText").textContent = `in ${tries} ${tries === 1 ? "attempt" : "attempts"}`;
+      $("cleared").classList.add("show");
+      clearTimeout(clearTimer);
+      clearTimer = setTimeout(() => {
+        $("cleared").classList.remove("show");
+        set(0);
+      }, Number(param("clearsecs", "8")) * 1000 || 8000);
+    }
+
+    render();
+
+    /* ---------- Chat commands (you and your mods) ---------- */
+    function canControl(user, badges) {
+      const login = user.toLowerCase();
+      if (login === channel) return true;
+      if (badges.includes("broadcaster/")) return true;
+      if (allowMods && badges.includes("moderator/")) return true;
+      return extraUsers.includes(login);
+    }
+
+    function command(text) {
+      const [cmd, arg] = text.trim().toLowerCase().split(/\s+/);
+      if (cmd === "!fail") add();
+      else if (cmd === "!unfail") set(count - 1);
+      else if (cmd === "!reset") set(0);
+      else if (cmd === "!clear") clear();
+      else if (cmd === "!setfail" && /^\d+$/.test(arg || "")) set(Number(arg));
+    }
+
+    /* ---------- Keys: work in a normal browser, or in OBS via Interact ---------- */
+    addEventListener("keydown", (e) => {
+      if (e.repeat) return;
+      if (e.key === "+" || e.key === "=" || e.key === "ArrowUp") add();
+      else if (e.key === "-" || e.key === "ArrowDown") set(count - 1);
+      else if (e.key === "c" || e.key === "C") clear();
+      else if (e.key === "0") set(0);
+    });
+
+    const status = (text) => {
+      if (inObs || inFrame) return;
+      $("status").hidden = false;
+      $("status").textContent = text;
+    };
+
+    /* ---------- Demo: fails a few times, then clears ---------- */
+    function demo() {
+      let step = 0;
+      setInterval(() => {
+        step = (step + 1) % 8;
+        if (step === 7) clear();
+        else if (step < 6) add();
+      }, 1600);
+    }
+
+    if (isDemo) {
+      demo();
+    } else {
+      connectChat(channel, {
+        onMessage({ user, badges, text }) {
+          if (!text.startsWith("!")) return;
+          if (!canControl(user, badges)) return;
+          command(text);
+        },
+        onStatus(state) {
+          status(state === "connected"
+            ? `Listening to #${channel}: !fail  !unfail  !clear  !reset  !setfail 5   ·   keys: + − C 0`
+            : "Not connected to Twitch chat, retrying…");
+        },
+      });
+    }
+  </script>
+</body>
+</html>
